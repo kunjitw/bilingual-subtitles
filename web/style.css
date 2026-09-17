@@ -1,0 +1,1173 @@
+:root {
+  --bg: #0e0f11;
+  --pane: #15161a;
+  --raised: #1c1d22;
+  --hover: #22242a;
+  --line: #2a2c32;
+  --line-soft: #212329;
+  --text: #e4e4e1;
+  --muted: #8d9199;
+  --faint: #60646c;
+  --accent: #e3b04b;
+  --accent-ink: #1b1508;
+  --accent-soft: rgba(227, 176, 75, 0.14);
+  --run: #6ea8e8;
+  --ok: #7fb77e;
+  --bad: #e2705f;
+  --radius: 5px;
+  --font: "Segoe UI Variable Text", "Segoe UI", "Microsoft JhengHei UI", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, "Microsoft JhengHei UI", monospace;
+  --sub-font: "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.5 var(--font);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+svg { width: 18px; height: 18px; display: block; }
+.grow { flex: 1; }
+.muted { color: var(--muted); }
+
+/* ---------- 共用元件 ---------- */
+
+.btn {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raised);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover:not(:disabled) { background: var(--hover); border-color: #3a3d44; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover:not(:disabled) { background: #edbd5c; border-color: #edbd5c; }
+.btn.small { height: 24px; padding: 0 8px; font-size: 12px; }
+.btn.icon-only { width: 30px; padding: 0; justify-content: center; }
+.btn.danger { color: var(--bad); }
+
+.icon-btn {
+  width: 28px; height: 28px;
+  border: 0; border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-grid; place-items: center;
+  font-size: 16px;
+}
+.icon-btn:hover { background: var(--hover); color: var(--text); }
+.icon-btn.small { width: 24px; height: 24px; }
+.icon-btn.small svg { width: 15px; height: 15px; }
+
+input[type="text"], input[type="url"], input[type="search"], select {
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: 0 9px;
+  outline: none;
+  min-width: 0;
+}
+select { padding-right: 4px; cursor: pointer; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+input[type="search"]::-webkit-search-cancel-button { filter: invert(0.6); }
+
+input[type="range"] { accent-color: var(--accent); cursor: pointer; }
+input[type="checkbox"] { accent-color: var(--accent); margin: 0; cursor: pointer; }
+
+.check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; white-space: nowrap; }
+.check.small { font-size: 12px; color: var(--muted); }
+
+.chip {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ---------- 頂列 ---------- */
+
+.topbar {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--pane);
+}
+.brand {
+  font-weight: 600; letter-spacing: 0.02em;
+  border: 0; background: transparent; cursor: pointer; padding: 0; color: var(--text);
+}
+.topnav { display: flex; gap: 2px; margin-left: 4px; }
+.topnav button {
+  height: 30px; padding: 0 12px; border: 0; border-radius: var(--radius);
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+.topnav button:hover { color: var(--text); background: var(--hover); }
+.topnav button.on { color: var(--text); background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
+.gpu {
+  display: flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 10px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: transparent; cursor: pointer;
+  color: var(--muted); font-size: 12px;
+}
+.gpu:hover { background: var(--hover); }
+.gpu .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.gpu.busy .dot { background: var(--run); box-shadow: 0 0 0 3px rgba(110, 168, 232, 0.18); }
+.gpu.busy .gpu-text { color: var(--text); }
+.gpu.paused .dot { background: var(--accent); }
+.gpu.paused .gpu-text { color: var(--text); }
+.gpu-short { display: none; }
+.gpu-vram { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+#gpu-loaded.paused { color: var(--text); }
+
+.offline {
+  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
+  z-index: 50; padding: 6px 14px;
+  background: #3a1f1a; border: 1px solid #6a3328; border-radius: var(--radius);
+  color: #f1c1b6;
+}
+
+/* ---------- 版面 ---------- */
+
+.layout {
+  height: calc(100% - 46px);
+  display: grid;
+  grid-template-columns: var(--left-w, 290px) minmax(0, 1fr) var(--right-w, 380px);
+}
+/* 明確指定欄位：側欄隱藏後播放器仍固定在中間那欄，不會被自動排進 0 寬的欄 */
+.layout > .library { grid-column: 1; }
+.layout > .stage { grid-column: 2; }
+.layout > .side { grid-column: 3; }
+body.hide-left .layout { --left-w: 0px; }
+body.hide-right .layout { --right-w: 0px; }
+body.hide-left .library, body.hide-right .side { display: none; }
+.panel-toggle.off { color: var(--faint); }
+.panel-toggle:not(.off) { color: var(--text); }
+.library, .side { background: var(--pane); display: flex; flex-direction: column; min-height: 0; }
+.library { border-right: 1px solid var(--line); }
+.side { border-left: 1px solid var(--line); }
+.pane-head { padding: 10px; border-bottom: 1px solid var(--line-soft); }
+.pane-head input { width: 100%; }
+.pane-head.row { display: flex; align-items: center; gap: 10px; }
+.pane-head.row input { flex: 1; }
+
+/* ---------- 播放列表 ---------- */
+
+.lib-head { display: grid; gap: 8px; }
+.lang-filter { display: flex; gap: 4px; }
+.lang-filter button {
+  flex: 1; height: 26px; padding: 0 6px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: transparent; color: var(--muted); cursor: pointer; font-size: 12px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+}
+.lang-filter button:hover { color: var(--text); background: var(--raised); }
+.lang-filter button.on { color: var(--accent); border-color: rgba(227, 176, 75, 0.45); background: var(--accent-soft); }
+.lang-filter span { font-family: var(--mono); font-size: 10px; color: var(--faint); }
+.lang-filter button.on span { color: inherit; opacity: 0.8; }
+
+.media-list { list-style: none; margin: 0; padding: 4px 0; overflow-y: auto; flex: 1; }
+.item {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.item:hover { background: var(--raised); }
+.item.on { background: var(--hover); border-left-color: var(--accent); }
+.thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #0a0a0b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .dur {
+  position: absolute; right: 3px; bottom: 3px;
+  padding: 0 4px; border-radius: 2px;
+  background: rgba(0, 0, 0, 0.75);
+  font: 11px/16px var(--mono);
+}
+.item-title {
+  font-size: 13px; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; word-break: break-all;
+}
+.item-sub {
+  margin-top: 1px; font-size: 12px; line-height: 1.35; color: var(--muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;
+}
+.title-sub { margin-top: 1px; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.card .check.inline select { color: var(--text); margin-left: 6px; }
+.item-meta { margin-top: 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.item-meta .st.run { color: var(--run); }
+.item-meta .st.bad { color: var(--bad); }
+.minibar { width: 100%; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.minibar i { display: block; height: 100%; background: var(--run); transition: width 0.4s; }
+.lib-empty { padding: 40px 20px; text-align: center; color: var(--muted); display: grid; gap: 12px; justify-items: center; }
+
+/* ---------- 播放器 ---------- */
+
+.stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.screen { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #000; }
+.screen:fullscreen { background: #000; }
+.player {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  overflow: hidden;
+  user-select: none;
+}
+.sub-lines-pool { display: none; }
+
+/* 影片畫面外的字幕列：放在影片上下，不會擋到畫面。
+   高度由 app.js 量好固定下來（保留行數），字幕出現、消失時影片不動 */
+.outside {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--gapo, 4px);
+  padding: 10px 16px;
+  background: #0a0a0b;
+  text-align: center;
+  flex-shrink: 0;
+  /* 疊到影片上的行要蓋過影片，但在控制列（z-index 3）底下，控制列出現時照樣按得到 */
+  position: relative; z-index: 2;
+}
+.outside:not(.active) { display: none; }
+/* 一句字幕超過保留的行數：字幕列高度不變，多出來的行往影片那邊疊，加底色才看得清楚 */
+.outside.bottom.over { justify-content: flex-end; }
+/* 疊到影片上的那幾行只有字本身能點，旁邊空白處照樣點得到影片 */
+.outside.over .sub-line { pointer-events: none; }
+.outside.over .sub-line > span {
+  background: rgba(10, 10, 11, 0.85);
+  box-shadow: 0 0 0 0.12em rgba(10, 10, 11, 0.85);
+}
+/* 底色往上多蓋到假名（行內元素的上下留白不影響排版，字幕列高度不會變） */
+.outside.over .sub-line.has-ruby > span { padding-top: 0.55em; }
+/* 量保留高度用的隱形複本（app.js 的 measureOutside） */
+.outside.sub-measure {
+  position: absolute; left: 0; right: 0; top: 0;
+  visibility: hidden; pointer-events: none;
+}
+.sub-measure .sub-line { white-space: pre; }
+/* 影片外的字級用視窗高度算，字幕列高度才不會跟影片大小互相牽動 */
+.outside .sub-line.l1 { font-size: var(--fs1o, 26px); }
+.outside .sub-line.l2 { font-size: var(--fs2o, 22px); }
+.outside.top { border-bottom: 1px solid #000; }
+.outside.bottom { border-top: 1px solid #000; }
+/* 影片本來就有黑邊時，字幕列浮在黑邊上，影片不用縮小 */
+.screen { position: relative; }
+.outside.floating {
+  position: absolute; left: 0; right: 0; z-index: 5;
+  background: transparent; border: 0; pointer-events: none;
+}
+.outside.floating .sub-line > span { pointer-events: auto; }
+.outside.floating.top { top: 0; }
+.outside.floating.bottom { bottom: 0; }
+.player video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.player.idle { cursor: none; }
+.player-empty, .player-msg {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 12px;
+  color: var(--muted); text-align: center; padding: 20px;
+}
+.player-msg { background: rgba(0, 0, 0, 0.7); color: var(--text); z-index: 4; }
+
+/* 影片內的字幕：覆蓋層對齊實際畫面範圍（去掉黑邊） */
+.subs {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  font-family: var(--sub-font);
+  text-align: center;
+}
+.zone {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--gap, 4px);
+  padding: 0 1%;
+}
+.zone:empty { display: none; }
+/* 上下各自貼齊，某一邊沒有字幕時另一邊也不會跑位 */
+.zone.in-top { position: absolute; left: 0; right: 0; top: 0; padding-top: var(--pad, 24px); }
+.zone.in-bottom { position: absolute; left: 0; right: 0; bottom: 0; padding-bottom: var(--pad, 24px); }
+/* 控制列出現時字幕不移動，避免畫面跳動 */
+
+/* 行寬跟著播放區寬度走，能不換行就不換行 */
+.sub-line {
+  max-width: var(--linew, 96%);
+  margin: 0 auto;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  font-family: var(--sub-font);
+}
+.outside .sub-line { max-width: calc(var(--linew, 96%) + 2%); }
+/* 字級設在整行上，max-width 的 em 才會跟著字級走（設在 span 上會讓行寬只有十幾個字） */
+.sub-line.l1 { font-size: var(--fs1, 28px); }
+.sub-line.l2 { font-size: var(--fs2, 24px); }
+/* 只選直接子元素：查字的 span.w 包在裡面，不能再套一次底色、padding 和模糊（描邊、顏色會自己繼承） */
+.sub-line > span {
+  pointer-events: auto;
+  color: #fff;
+  font-weight: 600;
+  font-size: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.sub-line.l2 > span { color: #eceade; }
+.sub-line:empty, .sub-line.empty { display: none; }
+/* paint-order 一定要有：沒有的話描邊會往字裡面吃，筆畫密的漢字會糊掉 */
+.sub-line.outline > span {
+  -webkit-text-stroke: 0.05em #000;
+  paint-order: stroke fill;
+  text-shadow: 0 0.04em 0.12em rgba(0, 0, 0, 0.75);
+}
+.sub-line.box > span {
+  background: rgba(8, 8, 8, var(--bg-alpha, 0.72));
+  padding: 0.08em 0.4em;
+  border-radius: 3px;
+}
+.sub-line.window {
+  background: rgba(8, 8, 8, var(--bg-alpha, 0.72));
+  padding: 0.12em 0.6em;
+  border-radius: 4px;
+}
+/* 假名（ふりがな）
+   有假名的字幕整行固定行高 2.2（實測 Yu Gothic、正黑體在 rt 0.5em 時有沒有假名高度都一樣），
+   隱藏假名只改透明度，不改排版，字幕才不會一句高一句低地跳動 */
+.sub-line[data-lang="ja"] { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", "MS Gothic", var(--sub-font); }
+.sub-line.has-ruby { line-height: 2.2; }
+ruby { ruby-position: over; ruby-align: center; cursor: pointer; }
+ruby > rt {
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: 0;
+  user-select: none;
+  transition: opacity 0.12s;
+}
+.sub-line.outline ruby > rt { -webkit-text-stroke-width: 0.12em; }
+.sub-line.box.has-ruby > span { padding-top: 0.55em; }
+.furi-hover ruby > rt { opacity: 0; }
+.furi-hover ruby:hover > rt, .furi-hover ruby.reveal > rt { opacity: 1; }
+.transcript.with-ruby .a { line-height: 2.2; }
+.transcript li { content-visibility: auto; contain-intrinsic-size: auto 3.5em; }
+.transcript .a ruby > rt { font-size: 0.55em; color: var(--muted); }
+.transcript ruby.f-h { text-decoration: underline dotted rgba(227, 176, 75, 0.5); text-underline-offset: 3px; }
+.transcript ruby.f-u > rt { color: var(--accent); }
+
+/* 修改讀音的彈窗 */
+.ruby-pop {
+  position: fixed; z-index: 70; width: 300px;
+  background: var(--raised); border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); padding: 12px; display: grid; gap: 10px;
+  font-family: var(--font); font-size: 13px; color: var(--text);
+}
+.ruby-pop .word { font-size: 26px; font-family: "Yu Gothic UI", "Yu Gothic", var(--sub-font); line-height: 1.3; }
+.ruby-pop .word small { display: block; font-size: 14px; color: var(--accent); }
+.ruby-pop .cands { display: flex; flex-wrap: wrap; gap: 6px; }
+.ruby-pop .cands button { height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); cursor: pointer; }
+.ruby-pop .cands button:hover, .ruby-pop .cands button.on { border-color: rgba(227, 176, 75, 0.5); color: var(--accent); }
+.ruby-pop .custom { display: flex; gap: 6px; }
+.ruby-pop .custom input { flex: 1; }
+.ruby-pop .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.ruby-pop .hint { margin: 0; }
+.sub-line.blur > span { filter: blur(0.32em); transition: filter 0.15s; }
+/* 只給滑鼠：手指點過的元素 :hover 會一直留著，翻譯就遮不回去（觸控改用點一下加 peek） */
+@media (hover: hover) {
+  .sub-line.blur > span:hover { filter: none; }
+}
+
+.controls {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 18px 12px 6px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.45) 60%, transparent);
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.player.controls-on .controls { opacity: 1; }
+.player:not(.has-media) .controls { display: none; }
+.ctrl-row { display: flex; align-items: center; gap: 2px; }
+.cbtn {
+  width: 34px; height: 34px;
+  border: 0; border-radius: var(--radius);
+  background: transparent; color: #e9e9e9;
+  display: grid; place-items: center; cursor: pointer;
+}
+.cbtn:hover { background: rgba(255, 255, 255, 0.1); }
+.cbtn svg { width: 20px; height: 20px; }
+.cbtn.toggle.on { color: var(--accent); background: rgba(227, 176, 75, 0.12); }
+.ctime { margin-left: 8px; font: 12px var(--mono); color: #d7d7d7; white-space: nowrap; }
+.crate {
+  height: 26px; margin: 0 4px;
+  background: rgba(255, 255, 255, 0.08); border: 0; color: #e9e9e9;
+  font-size: 12px;
+}
+.crate option { background: var(--raised); }
+.cvol { width: 80px; margin-right: 6px; }
+/* 手機橫放收起右欄時才出現（body.immersive），用來把右欄和頂列叫回來 */
+#c-panel { display: none; }
+
+.seek { position: relative; height: 14px; display: flex; align-items: center; cursor: pointer; margin: 0 4px 2px; }
+.seek-track { position: relative; width: 100%; height: 3px; background: rgba(255, 255, 255, 0.22); border-radius: 2px; transition: height 0.12s; }
+.seek:hover .seek-track { height: 5px; }
+.seek-buf { position: absolute; inset: 0 auto 0 0; background: rgba(255, 255, 255, 0.28); border-radius: 2px; }
+.seek-fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 2px; }
+.seek-fill::after {
+  content: ""; position: absolute; right: -6px; top: 50%;
+  width: 12px; height: 12px; margin-top: -6px; border-radius: 50%;
+  background: var(--accent); transform: scale(0); transition: transform 0.12s;
+}
+.seek:hover .seek-fill::after, .seek.drag .seek-fill::after { transform: scale(1); }
+.seek-tip {
+  position: absolute; bottom: 18px;
+  transform: translateX(-50%);
+  padding: 2px 6px; border-radius: 3px;
+  background: rgba(0, 0, 0, 0.85);
+  font: 11px var(--mono); white-space: nowrap; pointer-events: none;
+}
+
+.player:fullscreen { cursor: auto; }
+.player:fullscreen.idle { cursor: none; }
+
+/* ---------- 影片資訊與字幕設定 ---------- */
+
+.deck { border-top: 1px solid var(--line); background: var(--pane); padding: 10px 14px 12px; }
+.deck-row { display: flex; align-items: flex-start; gap: 16px; }
+.title-block { flex: 1; min-width: 0; }
+.title-block h1 {
+  margin: 0; font-size: 15px; font-weight: 600; line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.media-meta { margin-top: 2px; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; }
+.media-meta .src {
+  color: var(--faint); max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-decoration: none; direction: ltr;
+}
+.media-meta a.src:hover { color: var(--accent); text-decoration: underline; }
+.actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.subbar {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+}
+.subbar .sel, .subbar .range { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+.subbar .sel select { color: var(--text); font-size: 13px; max-width: 250px; }
+.subbar .range input { width: 90px; }
+.subbar .check { color: var(--muted); font-size: 12px; }
+.subbar .sep { width: 1px; height: 18px; background: var(--line); }
+.subbar #btn-swap { margin: 0 -8px; }
+/* 交換的是上下位置，箭頭轉成直的 */
+.subbar #btn-swap svg { transform: rotate(90deg); }
+.subbar #btn-swap:disabled { opacity: 0.35; cursor: default; background: transparent; color: var(--muted); }
+.subbar select:disabled { color: var(--faint); cursor: default; }
+/* 翻譯選單底下疊一個看不到的選單，裝著這部影片所有翻譯的名稱，換原文時選單寬度才不會變，subbar 不會換行跳動 */
+.subbar .sel-fit { display: inline-grid; }
+.subbar .sel-fit > select { grid-area: 1 / 1; justify-self: stretch; }
+.subbar .sel-ghost { visibility: hidden; pointer-events: none; }
+
+/* ---------- 右側分頁 ---------- */
+
+.tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 6px; }
+.tab {
+  height: 40px; padding: 0 12px;
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tab:hover { color: var(--text); }
+.tab.on { color: var(--text); border-bottom-color: var(--accent); }
+.tab .count { font-size: 11px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--run); color: #0b1522; font-weight: 600; line-height: 17px; }
+.tab .count:empty { display: none; }
+.tab-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.tr-status { padding: 8px 12px; border-bottom: 1px solid var(--line-soft); color: var(--muted); font-size: 12px; display: grid; gap: 6px; }
+.tr-status .minibar { height: 3px; }
+.transcript { list-style: none; margin: 0; padding: 4px 0 40vh; overflow-y: auto; flex: 1; }
+.transcript li {
+  display: grid; grid-template-columns: 52px minmax(0, 1fr);
+  gap: 8px; padding: 6px 12px 6px 10px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+}
+.transcript li:hover { background: var(--raised); }
+.transcript li.on { background: var(--accent-soft); border-left-color: var(--accent); }
+.transcript time { font: 11px/20px var(--mono); color: var(--faint); }
+/* 檢查時間軸後仍然對不上的行：時間左邊一個小點 */
+.transcript time:has(.chk) { position: relative; }
+.transcript time .chk {
+  position: absolute; left: -7px; top: 8px; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--bad); opacity: 0.55;
+}
+.transcript li.on time { color: var(--accent); }
+.transcript p { margin: 0; line-height: 1.5; word-break: break-word; }
+.transcript .b { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+.transcript.blur2 .b { filter: blur(4px); transition: filter 0.15s; }
+@media (hover: hover) {
+  .transcript.blur2 li:hover .b { filter: none; }
+}
+/* 觸控：點一下那句的翻譯才顯示（app.js 加 peek） */
+.transcript.blur2 li.peek .b { filter: none; }
+.transcript mark { background: rgba(227, 176, 75, 0.35); color: inherit; border-radius: 2px; }
+.pane-empty { padding: 40px 20px; text-align: center; color: var(--muted); display: grid; gap: 12px; justify-items: center; }
+.transcript li.pane-empty { grid-template-columns: none; cursor: default; border-left: 0; padding: 40px 20px; }
+.transcript li.pane-empty:hover { background: transparent; }
+
+/* ---------- 佇列 ---------- */
+
+.queue { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.queue-head { flex-wrap: wrap; row-gap: 6px; }
+/* 顯卡載入了什麼、剩多少顯存；「釋放顯卡」暫停佇列時的說明 */
+.queue-note { padding: 6px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); line-height: 1.45; }
+.queue-note.paused { color: var(--text); background: rgba(227, 176, 75, 0.08); }
+.qgroup { border-bottom: 1px solid var(--line); }
+.qgroup-head {
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+  background: var(--raised); position: sticky; top: 0; z-index: 1; cursor: default; list-style: none;
+}
+.qgroup-head::-webkit-details-marker { display: none; }
+details.qended > summary { cursor: pointer; }
+.qgroup-head b { font-weight: 600; font-size: 13px; }
+.qgroup-state { margin-left: auto; font-size: 12px; color: var(--muted); }
+.qdot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex-shrink: 0; }
+.qgroup.running .qdot { background: var(--run); box-shadow: 0 0 0 3px rgba(110, 168, 232, 0.18); }
+.qgroup.failed .qdot { background: var(--bad); }
+.qgroup.ended .qdot { background: var(--ok); }
+.qgroup-list { list-style: none; margin: 0; padding: 0; }
+.qgroup-list .job { padding-left: 27px; }
+.job { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); display: grid; gap: 4px; }
+.job-top { display: flex; align-items: baseline; gap: 8px; }
+.job-kind { font-size: 12px; color: var(--muted); }
+.job-state { margin-left: auto; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.job.running .job-state { color: var(--run); }
+.job.failed .job-state { color: var(--bad); }
+.job.done .job-state { color: var(--ok); }
+.job-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.job-title:hover { text-decoration: underline; text-decoration-color: var(--faint); }
+.job-stage { font-size: 12px; color: var(--muted); display: flex; gap: 8px; }
+.job-stage .eta { margin-left: auto; color: var(--faint); }
+.job-err { font-size: 12px; color: #e9a293; background: rgba(226, 112, 95, 0.08); border-radius: 3px; padding: 4px 6px; word-break: break-word; }
+.job-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.job.done, .job.canceled { opacity: 0.7; }
+
+/* ---------- 選單 ---------- */
+
+.menu {
+  position: fixed; z-index: 40;
+  min-width: 200px; padding: 4px;
+  background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.menu-item {
+  width: 100%; height: 30px; padding: 0 10px;
+  display: flex; align-items: center; gap: 8px;
+  border: 0; border-radius: 3px; background: transparent; cursor: pointer; text-align: left;
+  color: var(--text); text-decoration: none;
+}
+.menu-item:hover { background: var(--hover); }
+.menu-item.danger { color: var(--bad); }
+.menu-sep { height: 1px; margin: 4px 2px; background: var(--line); }
+.menu.panel { min-width: 300px; padding: 6px; }
+.menu.panel .row {
+  display: grid; grid-template-columns: 82px 1fr 42px; align-items: center; gap: 8px;
+  padding: 4px 8px; font-size: 12px; color: var(--muted);
+}
+.menu.panel .row b { font-weight: 400; font-family: var(--mono); font-size: 11px; color: var(--faint); text-align: right; }
+.menu.panel .row select { height: 26px; width: 100%; color: var(--text); grid-column: 2 / span 2; }
+.menu.panel .row.check-row { grid-template-columns: auto 1fr; padding: 6px 8px; cursor: pointer; }
+.menu.panel .row.check-row:hover { color: var(--text); }
+.menu.panel .row input[type="range"] { width: 100%; }
+.menu-label { padding: 6px 10px 2px; font-size: 11px; color: var(--faint); }
+.track-row { display: flex; align-items: center; gap: 2px; padding: 2px 2px 2px 10px; border-radius: 3px; }
+.track-row:hover { background: var(--hover); }
+.track-row .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+.track-row a, .track-row button {
+  height: 24px; padding: 0 7px; border: 0; border-radius: 3px; background: transparent;
+  color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+}
+.track-row a:hover, .track-row button:hover { background: var(--line); color: var(--text); }
+.track-row button.del:hover { color: var(--bad); }
+
+/* ---------- 對話框 ---------- */
+
+.dialog {
+  width: min(620px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--pane); color: var(--text);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+.dialog.narrow { width: min(440px, calc(100vw - 32px)); }
+.dialog.wide { width: min(900px, calc(100vw - 32px)); }
+
+.track-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.track-toolbar a.btn { text-decoration: none; color: var(--text); }
+.track-toolbar a.btn.disabled { opacity: 0.45; pointer-events: none; }
+.track-table { display: grid; gap: 6px; }
+.track-item {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px; align-items: center;
+  padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 5px; background: var(--raised);
+}
+.track-item.sel { border-color: rgba(227, 176, 75, 0.45); }
+.track-item.child { margin-left: 22px; position: relative; }
+.track-item.child::before {
+  content: ""; position: absolute; left: -14px; top: -7px; width: 9px; height: calc(50% + 7px);
+  border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); border-bottom-left-radius: 4px;
+}
+.track-item .name { font-weight: 600; }
+.track-item .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.track-item .slots { display: flex; gap: 4px; }
+.track-item .slots button {
+  height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--muted); cursor: pointer; font-size: 12px;
+}
+.track-item .slots button:hover { color: var(--text); }
+.track-item .slots button.on { color: var(--accent); border-color: rgba(227, 176, 75, 0.45); background: var(--accent-soft); }
+.track-item .acts { display: flex; gap: 4px; }
+.track-item .acts a, .track-item .acts button {
+  height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: transparent;
+  color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+}
+.track-item .acts a:hover, .track-item .acts button:hover { background: var(--line); color: var(--text); }
+.track-item .acts button.del:hover { color: var(--bad); }
+.track-item .acts button:disabled { opacity: 0.45; cursor: default; background: transparent; color: var(--muted); }
+.track-empty { padding: 30px; text-align: center; color: var(--muted); }
+.dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.dlg-head { display: flex; align-items: center; padding: 12px 12px 12px 18px; border-bottom: 1px solid var(--line); }
+.dlg-head h2 { margin: 0; font-size: 15px; font-weight: 600; flex: 1; }
+.dlg-body { padding: 16px 18px; display: grid; gap: 18px; max-height: calc(100vh - 180px); overflow-y: auto; }
+.dlg-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); position: relative; }
+.dlg-foot .error { margin-right: auto; color: var(--bad); font-size: 12px; }
+.field { display: grid; gap: 8px; }
+.field .label { color: var(--muted); font-size: 12px; }
+.hint { margin: 0; color: var(--faint); font-size: 12px; }
+.stack { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.stack select { color: var(--text); font-size: 13px; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: fit-content; }
+.seg button {
+  height: 30px; padding: 0 16px; border: 0; background: var(--bg); cursor: pointer; color: var(--muted);
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button:hover { color: var(--text); background: var(--raised); }
+.seg button.on { background: var(--accent-soft); color: var(--accent); }
+#lang-seg.need { outline: 1px solid rgba(226, 112, 95, 0.6); }
+
+.src-pane { display: grid; gap: 8px; }
+.src-pane input { width: 100%; }
+/* 對話框裡的一行提醒：已經有翻譯、正在翻譯、播放列表裡已經有這部影片 */
+.notice { margin: 0; color: var(--accent); font-size: 12px; line-height: 1.5; }
+.url-dup { display: flex; align-items: center; gap: 8px; }
+.url-dup span { flex: 1 1 0; width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* 寬度 0 起算：標題再長也不會把對話框撐寬 */
+
+.drop {
+  display: grid; place-items: center;
+  height: 140px;
+  border: 1px dashed #3a3d44; border-radius: var(--radius);
+  background: var(--bg); color: var(--muted); cursor: pointer; text-align: center; padding: 10px;
+}
+.drop:hover, .drop.over { border-color: var(--accent); color: var(--text); }
+.drop input { display: none; }
+
+.advanced summary { cursor: pointer; color: var(--muted); font-size: 12px; width: fit-content; }
+.advanced summary:hover { color: var(--text); }
+.adv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.adv-grid label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; }
+.adv-grid select { color: var(--text); font-size: 13px; }
+
+.upload-progress { position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--line); }
+.upload-progress i { display: block; height: 100%; width: 0; background: var(--accent); }
+
+.confirm-text { margin: 0; line-height: 1.6; }
+.confirm-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; display: grid; gap: 3px; }
+.confirm-list:empty { display: none; }
+.btn.primary.warn { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.primary.warn:hover { background: #e8806f; border-color: #e8806f; }
+
+.keys { border-collapse: collapse; width: 100%; }
+.keys td { padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
+.keys td:first-child { width: 40%; }
+kbd {
+  display: inline-block; min-width: 22px; padding: 0 6px;
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+  background: var(--raised); font: 12px/20px var(--mono); text-align: center;
+}
+
+/* ---------- 設定頁 ---------- */
+
+.settings-page { position: absolute; inset: 46px 0 0; background: var(--bg); overflow-y: auto; z-index: 20; }
+.settings-inner { max-width: 940px; margin: 0 auto; padding: 24px 24px 60px; display: grid; gap: 18px; }
+.settings-head { display: flex; align-items: center; gap: 16px; }
+.settings-head h1 { margin: 0; font-size: 20px; font-weight: 600; flex: 1; }
+.card { background: var(--pane); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 10px; }
+.card h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.card .hint { margin: -4px 0 0; }
+.mono { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.combo-table { display: grid; gap: 6px; }
+.combo-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 10px; align-items: center; }
+.combo-row .name { color: var(--muted); font-size: 12px; }
+.combo-row select { width: 100%; }
+.combo-head { color: var(--faint); font-size: 11px; }
+
+.model-list { display: grid; gap: 18px; }
+.model-group { display: grid; gap: 8px; }
+.model-group h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); }
+.model-group .hint { margin: -4px 0 2px; }
+.model-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 5px; background: var(--raised);
+}
+.model-row .title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.model-row .note { color: var(--muted); font-size: 12px; margin-top: 3px; }
+.model-row .size { color: var(--faint); font-size: 11px; font-family: var(--mono); }
+.model-row .acts { display: flex; gap: 6px; align-items: center; }
+.model-row.on { border-color: #3a4a34; }
+.model-row.is-default { border-color: rgba(227, 176, 75, 0.4); }
+.badge-default {
+  font-size: 11px; color: var(--accent); background: var(--accent-soft);
+  border-radius: 3px; padding: 0 6px; line-height: 18px;
+}
+.model-row .state-on { color: var(--ok); font-size: 12px; }
+.model-row .minibar { width: 120px; }
+.model-row .specs { color: var(--muted); font-size: 12px; margin-top: 3px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.model-row .leftover { color: var(--accent); font-size: 12px; margin-top: 2px; }
+.badge-warn {
+  font-size: 11px; color: var(--bad); background: rgba(226, 112, 95, 0.14);
+  border-radius: 3px; padding: 0 6px; line-height: 18px;
+}
+/* 模型授權小字：一般授權用淡色，非商用、授權不明用醒目的顏色 */
+.model-row .lic { font-size: 11px; color: var(--faint); text-decoration: none; }
+.model-row a.lic:hover { color: var(--muted); text-decoration: underline; }
+.model-row .lic-noncommercial, .model-row .lic-unknown {
+  color: var(--accent); background: var(--accent-soft);
+  border-radius: 3px; padding: 0 6px; line-height: 18px;
+}
+.model-row a.lic-noncommercial:hover, .model-row a.lic-unknown:hover { color: var(--accent); }
+.model-row .acts:empty { display: none; }
+/* 翻譯模型的各個版本（量化）：模型列底下每個版本一行 */
+.model-row .variants { grid-column: 1 / -1; display: grid; gap: 2px; border-top: 1px solid var(--line-soft); padding-top: 6px; }
+.variant-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 30px; }
+.variant-row .vinfo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.variant-row .vname { font-family: var(--mono); font-size: 12px; color: var(--text); min-width: 56px; }
+.variant-row .specs { margin-top: 0; }
+.variant-row .leftover { margin-top: 0; }
+.variant-row:not(.on) .vname { color: var(--muted); }
+/* 版本列的下載狀態（下載中、重試倒數）：放在規格底下自成一行，不擠按鈕那一欄 */
+.variant-row .vstage { flex-basis: 100%; color: var(--faint); font-size: 11px; font-family: var(--mono); overflow-wrap: anywhere; }
+
+.form-grid { display: grid; grid-template-columns: 240px 1fr; gap: 12px; }
+.form-grid label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
+.form-grid input, .form-grid select { width: 100%; color: var(--text); }
+.gpu-info { display: flex; gap: 20px; font-size: 13px; }
+.gpu-info b { font-weight: 600; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  z-index: 60; max-width: 560px; padding: 9px 14px;
+  background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.toast.bad { border-color: #6a3328; color: #f1c1b6; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #2c2e34; border: 2px solid var(--pane); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3d44; }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media (max-width: 1280px) {
+  /* 寬度用變數給：收起側欄時 body.hide-left、hide-right 會把它設成 0，右邊才不會留一條空白 */
+  .layout { --left-w: 250px; --right-w: 330px; }
+  .item { grid-template-columns: 96px minmax(0, 1fr); }
+}
+
+/* ---------- 手機、平板、窄視窗 ----------
+   --layout 給 app.js 讀，決定字級怎麼算、分頁怎麼切：
+   desktop  寬度超過 1000px 的滑鼠裝置：三欄（上面的規則，完全不動）
+   stack    直向（寬比高小）：影片滿寬在最上面，接著影片外字幕、分頁列、分頁內容（逐字稿、字幕設定、播放列表、佇列）
+   side     橫向（寬大於等於高）而且高度超過 560px（平板橫放、較矮的窄視窗）：左邊影片加影片資訊，右邊一欄分頁
+   short    橫向而且高度 560px 以下（手機橫放）：左邊整欄給影片，右邊一欄分頁，影片資訊放進「字幕設定」分頁
+   觸控裝置寬度到 1280px 都算進來，平板橫放時也不要三欄硬擠 */
+
+:root { --layout: desktop; }
+.tab.tab-compact, .touch-only, .t-touch { display: none; }
+/* 遮住翻譯：觸控時點一下翻譯顯示（app.js 加上 peek），換句後再遮回去 */
+.sub-line.blur.peek > span { filter: none; }
+/* iPhone 的 Safari 不能讓字幕列跟著影片一起全螢幕：改成把播放區蓋滿整個畫面 */
+body.pseudo-fs { overflow: hidden; }
+body.pseudo-fs #screen {
+  position: fixed; inset: 0; z-index: 30;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+@media (max-width: 1000px), (max-width: 1280px) and (hover: none) and (pointer: coarse) {
+  :root { --layout: stack; --cside: clamp(280px, 34vw, 380px); }
+  /* 整頁不捲動，只有分頁內容自己捲：iOS 的網址列不會縮放，影片位置也不會跟著跑 */
+  body { height: 100%; height: 100dvh; overscroll-behavior: none; }
+  .topbar {
+    height: calc(46px + env(safe-area-inset-top, 0px)); gap: 6px;
+    padding: env(safe-area-inset-top, 0px) max(8px, env(safe-area-inset-right, 0px)) 0 max(8px, env(safe-area-inset-left, 0px));
+  }
+  .topnav { margin-left: 0; }
+  #toggle-left, .gpu-vram, .desk-only { display: none; }
+  .gpu { min-width: 0; }
+  .gpu-text { min-width: 0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .layout {
+    height: calc(100% - 46px - env(safe-area-inset-top, 0px));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+  .layout > .library, .layout > .stage, .layout > .side { grid-column: auto; }
+  .side { display: contents; }
+  .library { border-right: 0; }
+  .tabs { background: var(--pane); padding: 0 4px; }
+  .tab { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 4px; white-space: nowrap; }
+  .tab.tab-compact { display: inline-flex; }
+  .layout > .library, .tab-pane { min-height: 0; background: var(--pane); }
+  .layout > .library { display: none; }
+  body[data-ctab="library"] .layout > .library { display: flex; }
+  /* 最後一句也能捲到上面：用 ::after 留空白（留在 padding 的話，分頁很矮時逐字稿會被撐出畫面） */
+  .transcript { padding-bottom: 0; }
+  .transcript::after { content: ""; display: block; height: 30vh; }
+  .settings-page, .vocab-page { top: calc(46px + env(safe-area-inset-top, 0px)); }
+  .settings-inner, .vocab-inner {
+    padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px));
+    padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
+  }
+  .settings-inner > *, .vocab-inner > * { min-width: 0; }
+  /* 對話框：標題列和底下的按鈕固定，中間自己捲。iOS 的 100vh 會被工具列蓋住，改用 dvh */
+  .dialog { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); overflow: hidden; }
+  .dialog[open] > form { display: flex; flex-direction: column; max-height: calc(100vh - 18px); max-height: calc(100dvh - 18px); }
+  .dlg-body { max-height: none; min-height: 0; flex: 1 1 auto; }
+  .menu { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); overflow-y: auto; }
+  .toast { max-width: calc(100vw - 24px); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+
+  /* 直向：影片滿寬在上面，下面是分頁 */
+  @media not all and (min-aspect-ratio: 1/1) {
+    #toggle-right { display: none; }
+    .stage { display: contents; }
+    .screen { grid-row: 1; grid-column: 1; flex: none; }
+    /* 影片框照影片本身的比例（app.js 設 --video-ar），直式影片最多佔六成高 */
+    .player { flex: none; width: 100%; aspect-ratio: var(--video-ar, 16 / 9); max-height: 60vh; max-height: 60dvh; }
+    /* 直拿全螢幕：影片和上下字幕列照原本的比例排在一起、垂直置中，字幕貼著影片，不會掉到畫面最下面被控制列蓋住 */
+    body.in-fs .screen { justify-content: center; }
+    body.in-fs .player { flex: 0 1 auto; min-height: 0; max-height: none; }
+    .tabs { grid-row: 2; grid-column: 1; }
+    .layout > .library, .tab-pane, .deck { grid-row: 3; grid-column: 1; }
+    .deck { display: none; }
+    body[data-ctab="info"] .deck:not([hidden]) { display: block; }
+  }
+
+  /* 影片資訊放在「字幕設定」分頁裡（直向、手機橫放）：窄欄位，選單改成一行一個 */
+  @media not all and (min-aspect-ratio: 1/1), (max-height: 560px) {
+    .deck { padding: 12px 12px 24px; border-top: 0; overflow-y: auto; }
+    .deck-row { flex-direction: column; gap: 10px; }
+    .title-block h1 { white-space: normal; overflow-wrap: anywhere; }
+    .title-sub { white-space: normal; }
+    .media-meta .src { max-width: 100%; }
+    .actions { flex-wrap: wrap; }
+    .subbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 10px; }
+    .subbar .line-ctl { grid-column: 1 / -1; display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+    .subbar .lbl { color: var(--muted); font-size: 12px; }
+    .subbar .line-ctl > select:not(.place), .subbar .sel-fit, .subbar .sel-fit > select { width: 100%; min-width: 0; max-width: none; }
+    /* 交換按鈕只有圖示，手機上看不到提示文字，補上字 */
+    .subbar #btn-swap { grid-column: 1 / -1; margin: 0 0 0 2.6em; justify-self: start; width: auto; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; }
+    .subbar #btn-swap::after { content: "交換上下位置"; font-size: 12px; }
+    .subbar .sep, .subbar > .grow { display: none; }
+    .subbar .check { justify-self: start; }
+    /* 手機橫放時右邊那欄很窄：位置選單換到下一行，字幕選單才看得到名稱 */
+    .deck { container-type: inline-size; }
+    @container (max-width: 340px) {
+      .subbar .line-ctl { grid-template-columns: 2.6em minmax(0, 1fr); }
+      .subbar .line-ctl > .place { grid-column: 2; }
+    }
+  }
+
+  /* 橫向：右邊一欄分頁 */
+  @media (min-aspect-ratio: 1/1) {
+    :root { --layout: side; }
+    .layout { grid-template-columns: minmax(0, 1fr) var(--cside); grid-template-rows: auto minmax(0, 1fr); }
+    .tabs { grid-column: 2; grid-row: 1; border-left: 1px solid var(--line); }
+    .layout > .library, .tab-pane { grid-column: 2; grid-row: 2; border-left: 1px solid var(--line); }
+    body.hide-right .layout { grid-template-columns: minmax(0, 1fr) 0; }
+    body.hide-right .layout > .library { display: none; }
+
+    /* 平板橫放：影片資訊照桌面放在影片下面 */
+    @media not all and (max-height: 560px) {
+      .layout > .stage { grid-column: 1; grid-row: 1 / span 2; }
+      .tab[data-tab="info"] { display: none; }
+    }
+    /* 手機橫放：左邊整欄給影片 */
+    @media (max-height: 560px) {
+      :root { --layout: short; }
+      .stage { display: contents; }
+      .screen { grid-column: 1; grid-row: 1 / span 2; min-height: 0; }
+      .deck { display: none; grid-column: 2; grid-row: 2; border-left: 1px solid var(--line); background: var(--pane); }
+      body[data-ctab="info"] .deck:not([hidden]) { display: block; }
+      body.hide-right[data-ctab] .deck:not([hidden]) { display: none; }
+      /* 收起右欄就是要專心看影片：頂列也收起來，高度全部給影片（影片是被高度限制住的，只收右欄不會變大）。
+         要叫回來按控制列上的側欄按鈕。app.js 只在播放器頁、已經打開影片時加 immersive */
+      body.immersive .topbar { display: none; }
+      body.immersive .layout { height: 100%; padding-top: env(safe-area-inset-top, 0px); }
+      body.immersive:not(.in-fs) #c-panel { display: grid; }
+    }
+  }
+}
+
+/* 觸控：按得到的東西至少約 40px，沒有滑鼠移上去才出現的東西 */
+@media (hover: none) and (pointer: coarse) {
+  /* iOS 的輸入框字小於 16px 會自動放大畫面 */
+  input[type="text"], input[type="url"], input[type="search"], input[type="number"], select { height: 40px; font-size: 16px; }
+  input[type="checkbox"] { width: 20px; height: 20px; }
+  input[type="range"] { height: 40px; }
+  .btn { height: 40px; padding: 0 14px; }
+  .btn.small { height: 40px; padding: 0 10px; font-size: 13px; }
+  .btn.icon-only { width: 40px; }
+  .icon-btn, .icon-btn.small { width: 40px; height: 40px; }
+  .check { min-height: 40px; }
+  .topnav button { height: 40px; padding: 0 10px; }
+  .brand { height: 40px; }
+  .gpu { height: 40px; }
+  /* 句子裡的連結（來源網址、授權）：不改排版，只把手指按得到的範圍往上下撐大 */
+  .media-meta a.src { padding: 11px 0; margin: -11px 0; }
+  .model-row a.lic, .card .hint a { position: relative; }
+  .model-row a.lic::after, .card .hint a::after { content: ""; position: absolute; left: 0; right: 0; top: -12px; bottom: -12px; }
+  .lang-filter button { height: 40px; }
+  .seg button { height: 40px; }
+  .tab { height: 44px; }
+  .menu-item { height: 44px; }
+  .menu.panel .row { padding: 2px 8px; }
+  .menu.panel .row select { height: 40px; }
+  .menu.panel .row.check-row { min-height: 44px; }
+  .track-row a, .track-row button { height: 40px; min-width: 40px; justify-content: center; }
+  .track-item .slots button, .track-item .acts a, .track-item .acts button { height: 40px; min-width: 40px; justify-content: center; }
+  .ruby-pop .cands button { height: 40px; }
+  .transcript li { padding-top: 9px; padding-bottom: 9px; }
+  .touch-only { display: block; }
+  .t-touch { display: inline; }
+  .t-mouse { display: none; }
+  .item { padding-top: 10px; padding-bottom: 10px; }
+  .qgroup-head { min-height: 44px; }
+  /* 佇列裡的影片標題點了會打開影片 */
+  .job-title { padding: 11px 0; }
+  /* 次要的小字（數量、長度、時間、模型路徑）在手機上至少 12px */
+  .lang-filter span, .thumb .dur, .chip, .tab .count, .transcript time, .menu-label, .menu.panel .row b,
+  .mono, .model-row .size, .model-row .lic, .badge-default, .badge-warn, .combo-head { font-size: 12px; }
+
+  .controls { padding: 30px max(8px, env(safe-area-inset-right, 0px)) max(4px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+  /* 收起的控制列只是變透明：手指點到那一塊是要叫出控制列，不能按到看不見的按鈕和進度條，底下字幕上的字也要點得到 */
+  .player:not(.controls-on) .controls { pointer-events: none; }
+  /* 影片外下方的字幕超過保留行數時，多出來的那一行疊在影片最底下：控制列往上讓一行（app.js 算 --ctrl-lift），
+     控制列出現時那一行的字不會被按鈕蓋住，手指點得到 */
+  .controls { bottom: var(--ctrl-lift, 0px); }
+  /* 控制列出現時，影片內下方的字幕和浮在黑邊上的字幕往上讓開（app.js 算好 --lift-in、--lift-float），
+     字不會被按鈕蓋住，點字也不會按到按鈕。影片本身不動 */
+  .zone.in-bottom, .outside.floating.bottom { transition: transform 0.18s ease; }
+  .player.controls-on .zone.in-bottom { transform: translateY(calc(-1 * var(--lift-in, 0px))); }
+  .player.controls-on ~ .outside.floating.bottom { transform: translateY(calc(-1 * var(--lift-float, 0px))); }
+  .cbtn { width: 40px; height: 40px; }
+  .cvol, #c-mute { display: none; }
+  .crate { height: 40px; font-size: 16px; }
+  /* 時間放到進度條左上方，按鈕那一行在手機寬度才放得下 */
+  .ctime { position: absolute; left: max(14px, env(safe-area-inset-left, 0px)); top: 8px; margin: 0; text-shadow: 0 0 4px rgba(0, 0, 0, 0.9); }
+  .seek { height: 24px; touch-action: none; }
+  .seek-track { height: 5px; }
+  .seek-fill::after { transform: scale(1); }
+}
+
+@media (max-width: 700px) {
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .combo-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .combo-row .name:first-child { grid-column: 1 / -1; }
+  .combo-head > span:first-child { display: none; }
+  .model-row { grid-template-columns: minmax(0, 1fr); }
+  .model-row .acts { flex-wrap: wrap; }
+  .variant-row { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 4px 0; }
+  .model-row .size, .mono { overflow-wrap: anywhere; }
+  /* 卡片是一欄的 grid：欄寬固定在卡片寬度，長選項的選單和長句子才不會把整張卡片撐出畫面 */
+  .card { grid-template-columns: minmax(0, 1fr); }
+  .card .hint { overflow-wrap: anywhere; }
+  .card .check { white-space: normal; }
+  .check.inline { white-space: normal; flex-wrap: wrap; }
+  .card .check.inline select { margin-left: 0; max-width: 100%; }
+  .settings-head { flex-wrap: wrap; gap: 4px 16px; }
+  .gpu-info { flex-wrap: wrap; gap: 4px 16px; }
+  .adv-grid { grid-template-columns: minmax(0, 1fr); }
+  .track-item { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; }
+  .track-item .acts { grid-column: 1 / -1; flex-wrap: wrap; }
+  .track-toolbar > .grow { display: none; }
+}
+
+@media (max-width: 600px) {
+  .gpu-text, .add-more { display: none; }
+  .gpu { padding: 0; width: 40px; justify-content: center; }
+  /* 佇列暫停時手機上也要看得出來（只有一個點看不出差別） */
+  .gpu.paused { width: auto; padding: 0 10px; }
+  .gpu.paused .gpu-text { display: inline; }
+  /* 對話框和選單改成從底部滑出、滿版寬 */
+  .dialog, .dialog.narrow, .dialog.wide {
+    width: 100%; max-width: 100%; margin: auto 0 0;
+    border-radius: 12px 12px 0 0; border-width: 1px 0 0;
+  }
+  .dlg-head { padding: 4px 4px 4px 14px; }
+  .dlg-body { padding: 14px; }
+  .dlg-foot { padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; }
+  .menu, .menu.panel {
+    left: 0 !important; right: 0; top: auto !important; bottom: 0; min-width: 0; max-height: 80vh; max-height: 80dvh;
+    border-radius: 12px 12px 0 0; padding: 6px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .menu.panel .row { grid-template-columns: 76px minmax(0, 1fr) 42px; }
+  /* 字幕外觀：矮一點，調整時上面的影片和字幕還看得到 */
+  .menu.panel { max-height: 58vh; max-height: max(40vh, var(--below-screen, 58vh)); }
+  .keys td:first-child { width: 42%; }
+}
+@media (max-width: 480px) {
+  .brand { display: none; }
+}
+@media (max-width: 400px) {
+  /* 更窄的手機：「佇列已暫停」會把頂列的分頁按鈕擠到換行，改寫「暫停」 */
+  .gpu.paused { padding: 0 9px; }
+  .gpu.paused .gpu-text { display: none; }
+  .gpu.paused .gpu-short { display: inline; color: var(--text); }
+}
+
+/* ---------- 首次自動安裝（app.js 的「首次自動安裝」） ---------- */
+
+/* 頂列右上角的安裝狀態，樣式跟顯卡狀態一樣 */
+.sbadge {
+  display: flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 10px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: transparent; cursor: pointer; white-space: nowrap;
+  color: var(--text); font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.sbadge:hover { background: var(--hover); }
+.sbadge .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--run); box-shadow: 0 0 0 3px rgba(110, 168, 232, 0.18); }
+.sbadge.wait .dot { background: var(--accent); box-shadow: 0 0 0 3px rgba(227, 176, 75, 0.18); }
+.sbadge.bad { border-color: rgba(226, 112, 95, 0.45); }
+.sbadge.bad .dot { background: var(--bad); box-shadow: 0 0 0 3px rgba(226, 112, 95, 0.18); }
+.sbadge .sb-short { display: none; }
+
+/* 全畫面進度頁：蓋住頂列，網路斷線提示和 toast 還是在它上面 */
+.setup { position: fixed; inset: 0; z-index: 45; background: var(--bg); overflow-y: auto; overscroll-behavior: contain; }
+.setup-box { max-width: 560px; margin: 10vh auto 48px; padding: 0 20px; display: flex; flex-direction: column; gap: 14px; outline: none; }
+.setup-box h1 { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.3; }
+.setup-sub { margin: -8px 0 0; color: var(--muted); font-size: 14px; }
+.setup-gpu { margin: 0; color: var(--faint); font-size: 12px; }
+.setup-notes { display: grid; gap: 4px; }
+.setup-notes p { margin: 0; color: var(--accent); font-size: 13px; line-height: 1.5; }
+.setup-total { display: grid; gap: 7px; margin-top: 4px; }
+.setup-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.setup-bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--accent); transition: width 0.4s; }
+.setup-bar.busy i { width: 30% !important; transition: none; animation: setup-busy 1.4s ease-in-out infinite alternate; }
+@keyframes setup-busy { from { transform: translateX(0); } to { transform: translateX(233%); } }
+@media (prefers-reduced-motion: reduce) {
+  .setup-bar.busy i { animation: none; width: 100% !important; opacity: 0.35; }
+}
+.setup-sub, .setup-notes p, .setup-ready, .setup-why, .setup-how, .setup-foot { text-wrap: pretty; }
+.setup-total-text { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.setup-items { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--pane); }
+.setup-items li {
+  display: grid; grid-template-columns: 5.5em minmax(0, 1fr) auto; align-items: center; gap: 7px 10px;
+  padding: 10px 12px; border-top: 1px solid var(--line-soft);
+}
+.setup-items li:first-child { border-top: 0; }
+.su-role { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.su-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.su-right {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.su-right .btn { color: var(--text); }
+.su-bar { grid-column: 1 / -1; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.su-bar i { display: block; height: 100%; width: 0; background: var(--run); transition: width 0.4s; }
+.setup-items li.s-waiting .su-right, .setup-items li.s-canceled .su-right { color: var(--faint); }
+.setup-items li.s-done .su-right { color: var(--ok); }
+.setup-items li.s-done .su-bar i { background: var(--ok); }
+.setup-items li.s-failed .su-right { color: var(--bad); }
+.setup-items li.s-failed .su-bar i { background: var(--bad); }
+.setup-items li.s-net_wait .su-right, .setup-items li.s-retry_wait .su-right, .setup-items li.s-paused .su-right { color: var(--accent); }
+.setup-items li.s-net_wait .su-bar i, .setup-items li.s-retry_wait .su-bar i, .setup-items li.s-paused .su-bar i,
+.setup-items li.s-canceled .su-bar i { background: var(--faint); }
+.setup-ready { margin: 0; font-size: 13px; }
+.setup-missing { display: grid; gap: 6px; }
+.setup-missing div { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; color: var(--muted); font-size: 13px; }
+.setup-block {
+  display: grid; gap: 8px; padding: 14px 16px;
+  border: 1px solid rgba(226, 112, 95, 0.35); border-radius: 6px; background: rgba(226, 112, 95, 0.06);
+}
+.setup-why { margin: 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.setup-how { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.setup-actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.setup-actions .btn { height: 36px; padding: 0 18px; font-size: 14px; justify-content: center; }
+.setup-link { border: 0; background: transparent; padding: 0; color: var(--faint); font-size: 12px; cursor: pointer; }
+.setup-link:hover { color: var(--muted); text-decoration: underline; }
+.setup-foot { margin: 0; color: var(--faint); font-size: 12px; line-height: 1.6; }
+
+/* 佇列裡等模型下載的任務 */
+.job-state.wait { color: var(--accent); }
+.link-btn { border: 0; background: transparent; padding: 0; color: var(--accent); font-size: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+/* 設定頁字典列最右邊的按鈕：文字佔中間、太長時自己換行，按鈕固定在同一列右邊（手機上每一列才對得齊） */
+#dict-status .dict-row { align-items: center; }
+#dict-status .dict-row > span { flex: 1 1 auto; min-width: 0; }
+#dict-status .dict-row .btn { margin-left: auto; flex-shrink: 0; }
+
+@media (max-width: 600px) {
+  .sbadge { padding: 0 8px; gap: 6px; }
+  .sbadge .sb-long { display: none; }
+  .sbadge .sb-short { display: inline; }
+  .setup-box {
+    margin: 0 auto;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      calc(32px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .setup-box h1 { font-size: 22px; }
+  .setup-items li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name right" "role role" "bar bar"; gap: 2px 10px; }
+  .setup-items .su-name { grid-area: name; }
+  .setup-items .su-right { grid-area: right; }
+  .setup-items .su-role { grid-area: role; }
+  .setup-items .su-bar { grid-area: bar; margin-top: 7px; }
+  /* 按鈕全寬、上下排：主按鈕在上，「改選模型」在最下面置中 */
+  .setup-actions { flex-direction: column; align-items: stretch; gap: 8px; }
+  .setup-actions > .grow { display: none; }
+  #setup-main { order: 1; }
+  #setup-close { order: 2; }
+  #setup-change { order: 3; align-self: center; }
+  #dict-status .dict-row { gap: 10px; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .sbadge { height: 40px; }
+  .setup-actions .btn { height: 44px; }
+  .setup-link { min-height: 40px; padding: 0 10px; font-size: 13px; }
+  .link-btn { padding: 8px 0; margin: -8px 0; }
+}

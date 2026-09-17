@@ -1,0 +1,14 @@
+# 一般文字檔交給 git 判斷，repo 裡一律存成 LF
+* text=auto
+
+# Windows 批次檔要 CRLF，不然 cmd 的 goto 和標籤會出錯
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.sh text eol=lf
+
+# 二進位檔不要動換行
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

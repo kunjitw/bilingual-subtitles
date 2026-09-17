@@ -1,0 +1,98 @@
+{
+  "manifest_version": 1,
+  "note": "執行環境要下載的東西。每個檔案可以有好幾個網址（依序試，之後可以加鏡像），全部核對 sha256、大小，支援續傳。改了這個檔，下次啟動會自動更新有變的部分。uv 的網址和 sha256 也寫在 get_uv.cmd，兩邊要一致（tests/test_launcher.py 會檢查）。",
+  "uv": {
+    "version": "0.12.15",
+    "license": "MIT OR Apache-2.0",
+    "files": [
+      {
+        "name": "uv-0.12.15-py3-none-win_amd64.whl",
+        "urls": [
+          "https://files.pythonhosted.org/packages/ac/d8/0b4fdfb56c79a307237295f8a0f7c64a34d5d1e8c090fab0bc1201cab2a8/uv-0.12.15-py3-none-win_amd64.whl"
+        ],
+        "sha256": "39af7d437b6d1f962f11c0b77f891d302ea675a0ebbcfe9792f633d843740a25",
+        "size": 17674023
+      }
+    ]
+  },
+  "python": {
+    "version": "3.12.14",
+    "dir": "cpython-3.12.14-windows-x86_64-none"
+  },
+  "msvc_runtime": {
+    "version": "14.44.35112",
+    "file_version": "14.44.35211.0",
+    "license": "Microsoft Visual C++ Redistributable（可隨程式散布的檔案）",
+    "vc_redist_url": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
+    "wheel_dir": "msvc_runtime-14.44.35112.data/data/Scripts/",
+    "dlls": [
+      "msvcp140.dll", "msvcp140_1.dll", "msvcp140_2.dll", "msvcp140_atomic_wait.dll", "msvcp140_codecvt_ids.dll",
+      "vcruntime140.dll", "vcruntime140_1.dll", "vcruntime140_threads.dll", "vcomp140.dll", "concrt140.dll"
+    ],
+    "files": [
+      {
+        "name": "msvc_runtime-14.44.35112-cp312-cp312-win_amd64.whl",
+        "urls": [
+          "https://files.pythonhosted.org/packages/21/3b/134d04268ab8e35853cd007582076429b45d60d6abb1036d159be9c50342/msvc_runtime-14.44.35112-cp312-cp312-win_amd64.whl"
+        ],
+        "sha256": "32f9c706009e16ccc319d6947ce3bffe20e5192bee52b18cf48313f9e7bedfbe",
+        "size": 1921899
+      }
+    ]
+  },
+  "ffmpeg": {
+    "version": "n8.1.2-50-g1a748fe2cd",
+    "build": "BtbN FFmpeg-Builds autobuild-2026-08-31-13-27, win64-gpl-shared-8.1",
+    "license": "GPL-3.0-or-later",
+    "source": "https://github.com/FFmpeg/FFmpeg/commit/1a748fe2cd",
+    "dir": "ffmpeg-n8.1.2-50",
+    "strip_top_folder": true,
+    "keep": ["bin/ffmpeg.exe", "bin/ffprobe.exe", "bin/*.dll", "LICENSE.txt"],
+    "files": [
+      {
+        "name": "ffmpeg-n8.1.2-50-g1a748fe2cd-win64-gpl-shared-8.1.zip",
+        "urls": [
+          "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-31-13-27/ffmpeg-n8.1.2-50-g1a748fe2cd-win64-gpl-shared-8.1.zip"
+        ],
+        "sha256": "0a41f31caff48e3035b48f09f5d840bd8d1863008240fc43e457f15e589cf5b3",
+        "size": 80069496
+      }
+    ],
+    "exe": {"ffmpeg": "bin/ffmpeg.exe", "ffprobe": "bin/ffprobe.exe"}
+  },
+  "llama_cpp": {
+    "version": "b10985",
+    "build": 10985,
+    "commit": "760984655",
+    "license": "MIT（cudart、cublas 依 NVIDIA CUDA EULA 可隨程式散布）",
+    "dir": "llama.cpp-b10985",
+    "strip_top_folder": false,
+    "keep": [
+      "llama-server.exe", "llama-server-impl.dll", "llama.dll", "llama-common.dll", "mtmd.dll",
+      "ggml*.dll", "libomp.dll", "LICENSE*", "cudart64_*.dll", "cublas64_*.dll", "cublasLt64_*.dll"
+    ],
+    "files": [
+      {
+        "name": "llama-b10985-bin-win-cuda-13.4-x64.zip",
+        "urls": [
+          "https://github.com/ggml-org/llama.cpp/releases/download/b10985/llama-b10985-bin-win-cuda-13.4-x64.zip"
+        ],
+        "sha256": "8afb12df880e367b82000cfd41d2d24c49fa6a529eae90e9297ea7b39d4db70f",
+        "size": 150066877
+      },
+      {
+        "name": "cudart-llama-bin-win-cuda-13.4-x64.zip",
+        "urls": [
+          "https://github.com/ggml-org/llama.cpp/releases/download/b10985/cudart-llama-bin-win-cuda-13.4-x64.zip"
+        ],
+        "sha256": "738f8c251ac22b70c3ae6f83a10cf222725df0395246a2cf58f32bdb85fbe668",
+        "size": 423535356
+      }
+    ],
+    "exe": {"llama_server": "llama-server.exe"}
+  },
+  "yt_dlp": {
+    "requirement": "yt-dlp[default,deno]",
+    "note": "不鎖版本（打包計畫 D8）：第一次安裝時裝最新版，之後用 setup_runtime.py --update-ytdlp 更新"
+  }
+}

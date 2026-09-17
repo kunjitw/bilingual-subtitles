@@ -1,0 +1,428 @@
+/* ---------- 查字：字幕上的詞 ---------- */
+
+.w { cursor: pointer; border-radius: 0.12em; }
+.sub-line .w:hover, .sub-line .w.hl { background: rgba(255, 255, 255, 0.18); }
+.transcript .w:hover, .transcript .w.hl { background: rgba(255, 255, 255, 0.09); }
+
+/* ---------- 解釋卡（放在 #screen 裡，全螢幕也看得到） ---------- */
+
+#wpop {
+  position: absolute; left: 0; top: 0; z-index: 30;
+  width: clamp(250px, 26vw, 360px); max-height: 45%; overflow-y: auto;
+  padding: 10px 12px; display: grid; gap: 5px; align-content: start;
+  background: rgba(24, 25, 29, 0.97); border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  /* 字級跟著第二行字幕的大小走（#screen 上的 --fs2），全螢幕時卡片也會跟著變大 */
+  font: clamp(13px, calc(var(--fs2, 24px) * 0.42), 20px)/1.5 var(--font); color: var(--text);
+  text-align: left; user-select: text; white-space: normal;
+}
+#wpop.pinned { width: clamp(300px, 32vw, 440px); gap: 7px; }
+#wpop.in-panel { position: fixed; z-index: 35; max-height: 60vh; font-size: 13px; }
+#wpop .muted { color: var(--muted); }
+
+.wp-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; }
+.wp-word { font-size: 1.4em; font-weight: 600; line-height: 1.25; font-family: var(--sub-font); }
+.wp-head[lang="ja"] .wp-word { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", var(--sub-font); }
+.wp-read { color: var(--muted); }
+.wp-acc { color: var(--faint); font: 0.8em var(--mono); }
+.wp-tag {
+  font-size: 0.78em; line-height: 1.5; padding: 0 5px;
+  border: 1px solid var(--line); border-radius: 3px; color: var(--muted); white-space: nowrap;
+}
+.wp-tag.lv { color: var(--accent); border-color: rgba(227, 176, 75, 0.4); }
+.wp-st { margin-left: auto; font-size: 0.75em; color: var(--ok); }
+.wp-st.st1 { color: var(--accent); }
+.wp-st.st3 { color: var(--faint); }
+.wp-chain { color: var(--muted); font-size: 0.86em; }
+.wp-src { margin-left: 6px; font-size: 0.72em; color: var(--faint); white-space: nowrap; }
+.wp-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 1px; }
+.wp-meta { font-size: 0.84em; color: var(--faint); }
+.wp-senses { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+.wp-senses li::marker { color: var(--faint); font-size: 0.85em; }
+.wp-pos { display: block; font-size: 0.72em; color: var(--faint); }
+.wp-en { font-size: 0.82em; color: var(--muted); }
+.wp-phrase { display: grid; gap: 3px; padding-bottom: 6px; border-bottom: 1px solid var(--line-soft); }
+.wp-sec { border-top: 1px solid var(--line-soft); padding-top: 6px; display: grid; gap: 1px; }
+.wp-label { font-size: 0.75em; color: var(--faint); margin-bottom: 2px; }
+.wp-ex {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 8px;
+  padding: 3px 5px; margin: 0 -5px; border: 0; border-radius: 4px;
+  background: transparent; color: inherit; font: inherit; font-size: 0.9em; text-align: left; cursor: pointer;
+}
+.wp-ex:hover { background: var(--hover); }
+.wp-ex time { font: 0.78em/1.95 var(--mono); color: var(--faint); }
+.wp-ex small { display: block; color: var(--muted); font-size: 0.88em; }
+.wp-exrow { display: flex; align-items: stretch; gap: 2px; }
+.wp-exrow .wp-ex { flex: 1; min-width: 0; }
+.wp-mini {
+  flex: none; width: 22px; border: 0; border-radius: 4px; background: transparent;
+  color: var(--faint); font-size: 0.8em; cursor: pointer;
+}
+.wp-mini:hover { background: var(--hover); color: var(--accent); }
+.wp-ex mark, .vb-exi mark { background: rgba(227, 176, 75, 0.28); color: inherit; border-radius: 2px; }
+.wp-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  border-top: 1px solid var(--line-soft); padding-top: 8px;
+}
+.wp-stbtns { display: inline-flex; gap: 6px; }
+.wp-stbtns.small { gap: 4px; }
+.wp-stbtns.small .btn { height: 22px; padding: 0 6px; font-size: 11px; }
+.wp-phrase .wp-stbtns { margin-top: 2px; }
+/* 還沒釘選的小卡底下：說明＋狀態按鈕 */
+.wp-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.wp-foot .wp-stbtns { margin-left: auto; }
+/* 目前的狀態：不會＝琥珀、已會＝綠、忽略＝亮灰。選中的邊框和底色都要比沒選的明顯，忽略也不能看起來像停用 */
+.wp-stbtns .btn.on { color: var(--accent); border-color: rgba(227, 176, 75, 0.6); background: var(--accent-soft); }
+.wp-stbtns .btn.on.st2 { color: var(--ok); border-color: rgba(127, 183, 126, 0.6); background: rgba(127, 183, 126, 0.14); }
+.wp-stbtns .btn.on.st3 { color: var(--text); border-color: rgba(228, 228, 225, 0.45); background: rgba(228, 228, 225, 0.12); }
+.wp-links { margin-left: auto; display: flex; gap: 10px; font-size: 0.8em; }
+.wp-links a { color: var(--muted); text-decoration: none; }
+.wp-links a:hover { color: var(--text); text-decoration: underline; }
+
+/* ---------- 設定頁 ---------- */
+
+.lookup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+.dict-status { display: grid; gap: 4px; }
+.dict-row { display: flex; gap: 12px; }
+.dict-row b { font-weight: 600; min-width: 2.5em; color: var(--muted); }
+.dict-row .off { color: var(--faint); }
+
+/* ---------- 單字頁 ---------- */
+
+/* scrollbar-gutter：列表長短切換時捲軸出現或消失，內容不要左右跳 */
+.vocab-page { position: absolute; inset: 46px 0 0; background: var(--bg); overflow-y: auto; scrollbar-gutter: stable; z-index: 20; }
+.vocab-inner { max-width: 1180px; margin: 0 auto; padding: 20px 24px 60px; display: grid; gap: 12px; }
+.vocab-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.vocab-head h1 { margin: 0 6px 0 0; font-size: 20px; font-weight: 600; }
+#vb-lang button span { margin-left: 6px; font: 10px var(--mono); color: var(--faint); }
+#vb-lang button.on span { color: inherit; opacity: 0.8; }
+#vb-scope { max-width: 340px; color: var(--text); }
+#vb-search { width: 230px; }
+.vb-summary { color: var(--muted); font-size: 12px; }
+.vocab-tools { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.vocab-tools select { height: 26px; margin-left: 6px; color: var(--text); font-size: 12px; }
+.vb-note {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--pane); color: var(--muted);
+}
+.vb-note .bad { color: var(--bad); }
+.vb-status button { height: 28px; padding: 0 11px; font-size: 12px; }
+.vb-status button span { margin-left: 5px; font: 10px var(--mono); color: var(--faint); }
+.vb-status button.on span { color: inherit; opacity: 0.8; }
+.vb-table { border: 1px solid var(--line); border-radius: 6px; background: var(--pane); overflow: hidden; }
+.vb-row {
+  display: grid; grid-template-columns: minmax(160px, 1.1fr) minmax(0, 2.6fr) 40px 64px 48px 154px;
+  gap: 12px; align-items: center; padding: 7px 12px; border-top: 1px solid var(--line-soft); cursor: pointer;
+}
+.vb-headrow { border-top: 0; background: var(--raised); color: var(--faint); font-size: 11px; cursor: default; padding: 6px 12px; }
+#vb-list .vb-row:first-child { border-top: 0; }
+.vb-headrow + #vb-list .vb-row:first-child { border-top: 1px solid var(--line-soft); }
+#vb-list .vb-row:hover { background: var(--raised); }
+.vb-word { min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; }
+.vb-word b { font-weight: 600; font-size: 15px; word-break: break-all; }
+.vb-word[lang="ja"] b { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", var(--font); }
+.vb-word small { color: var(--muted); font-size: 12px; }
+.vb-word .wp-tag { font-size: 10px; }
+/* 標過的列：左邊一條狀態色，單字顏色也分開（不會＝琥珀、已會＝灰、忽略＝更淡，解釋也跟著淡） */
+.vb-row.st1 { box-shadow: inset 2px 0 0 var(--accent); }
+.vb-row.st2 { box-shadow: inset 2px 0 0 var(--ok); }
+.vb-row.st3 { box-shadow: inset 2px 0 0 var(--faint); }
+.vb-row.st1 .vb-word b { color: var(--accent); }
+.vb-row.st2 .vb-word b { color: var(--muted); font-weight: 400; }
+.vb-row.st3 .vb-word b, .vb-row.st3 .vb-gloss { color: var(--faint); }
+.vb-row.st3 .vb-word b { font-weight: 400; }
+/* 剛標掉、等一下就會從目前篩選拿掉的列 */
+.vb-row.leaving { opacity: 0.4; transition: opacity 0.2s; }
+.vb-gloss { min-width: 0; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vb-src { margin-left: 6px; font-size: 11px; color: var(--faint); }
+.vb-lv { font-size: 12px; color: var(--accent); }
+.vb-row .num { text-align: right; font-family: var(--mono); font-size: 12px; }
+.vb-table.one-video .vb-col-videos { visibility: hidden; }
+.vb-acts { display: flex; gap: 4px; justify-content: flex-end; }
+.vb-st {
+  height: 24px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: transparent; color: var(--muted); font-size: 12px; cursor: pointer;
+}
+.vb-st:hover { color: var(--text); background: var(--hover); }
+.vb-st.on { color: var(--accent); border-color: rgba(227, 176, 75, 0.6); background: var(--accent-soft); }
+.vb-st.on.st2 { color: var(--ok); border-color: rgba(127, 183, 126, 0.6); background: rgba(127, 183, 126, 0.14); }
+.vb-st.on.st3 { color: var(--text); border-color: rgba(228, 228, 225, 0.45); background: rgba(228, 228, 225, 0.12); }
+
+/* 例句（單字視窗裡） */
+.vb-exg { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
+.vb-ext { display: flex; align-items: baseline; gap: 10px; font-size: 12px; color: var(--muted); padding: 6px 8px 2px; }
+.vb-ext b { min-width: 0; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vb-ext span { color: var(--faint); white-space: nowrap; }
+.vb-exi {
+  display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: start;
+  padding: 5px 8px; border-radius: 4px; color: var(--text);
+}
+.vb-exi:hover { background: var(--raised); }
+.vb-exi time { font: 11px/21px var(--mono); color: var(--faint); }
+.vb-sent { line-height: 1.6; }
+.vb-sent[lang="ja"] { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", var(--font); }
+.vb-sent mark { background: rgba(227, 176, 75, 0.28); color: inherit; border-radius: 2px; }
+.vb-sent rt { font-size: 0.55em; color: var(--muted); }
+.vb-zh { display: block; color: var(--muted); font-size: 12.5px; }
+.vb-exacts { display: flex; gap: 4px; opacity: 0.55; }
+.vb-exi:hover .vb-exacts, .vb-exacts:focus-within { opacity: 1; }
+.vb-hint { color: var(--faint); font-size: 12px; padding: 4px 8px; }
+.vb-empty { padding: 40px 20px; text-align: center; color: var(--muted); }
+
+/* 分頁 */
+.vb-pager { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.vb-pages { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.vb-page {
+  min-width: 26px; height: 24px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius);
+  background: transparent; color: var(--muted); font: 12px var(--mono); cursor: pointer;
+}
+.vb-page:hover { color: var(--text); background: var(--hover); }
+.vb-page.on { color: var(--accent); border-color: rgba(227, 176, 75, 0.45); background: var(--accent-soft); }
+.vb-gap { color: var(--faint); padding: 0 2px; }
+#vb-goto { width: 54px; height: 24px; text-align: center; color: var(--text); }
+#vb-size { height: 24px; color: var(--text); font-size: 12px; }
+
+/* 單字詳細視窗 */
+#dlg-word .dlg-body { gap: 14px; }
+/* 影片標題不換行（會用 … 截斷），要讓格線容器可以縮，不然整個對話框會多出橫向捲軸 */
+#dlg-word .dlg-body > * { min-width: 0; }
+#dlg-word .dlg-body:focus { outline: none; }
+.wd-more { justify-self: start; }
+.wd-nav { display: flex; gap: 2px; margin-right: 4px; }
+.wd-nav .icon-btn { font-size: 16px; line-height: 1; }
+.wd-word { gap: 4px 10px; margin-bottom: 8px; }
+.wd-word .wp-word { font-size: 24px; }
+.wd-word[lang="ja"] .wp-word { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", var(--font); }
+#wd-detail { display: grid; gap: 6px; align-content: start; }
+#wd-detail .wp-senses { gap: 6px; }
+.wd-sec { border-top: 1px solid var(--line-soft); padding-top: 10px; }
+.wd-sec .wp-label { font-size: 12px; color: var(--faint); margin-bottom: 4px; }
+.wd-hint { margin-right: auto; color: var(--faint); font-size: 12px; }
+
+/* 標記後的提示（附復原） */
+.wl-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 70;
+  display: flex; align-items: center; gap: 12px; padding: 7px 10px 7px 14px;
+  background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); font-size: 13px;
+}
+/* 在單字視窗裡：放進底部那一列（取代左邊的按鍵說明），不浮在畫面上，才不會疊到視窗 */
+.dlg-foot .wl-toast {
+  position: static; transform: none; margin-right: auto; min-width: 0;
+  padding: 2px 3px 2px 10px; box-shadow: none; font-size: 12px;
+}
+.dlg-foot .wl-toast span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dlg-foot .wl-toast:not([hidden]) + .wd-hint { display: none; }
+/* 全螢幕時放上面，不要蓋到控制列和進度條 */
+:fullscreen > .wl-toast { top: 18px; bottom: auto; }
+
+/* 小視窗播放器 */
+.mini {
+  position: fixed; z-index: 80; display: flex; flex-direction: column;
+  background: var(--pane); border: 1px solid var(--line); border-radius: 7px; overflow: hidden;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+  container-type: size;                              /* 字幕字級跟著小視窗大小走（cqw、cqh） */
+}
+.mini-head {
+  display: flex; align-items: center; gap: 6px; padding: 5px 5px 5px 10px;
+  background: var(--raised); border-bottom: 1px solid var(--line); cursor: move; touch-action: none;
+}
+.mini-title { flex: 1; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-video { position: relative; flex: 1 1 0; min-height: 120px; background: #000; }
+.mini-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.mini-load {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  padding: 4px 10px; border-radius: 4px; background: rgba(0, 0, 0, 0.55); color: var(--muted); font-size: 12px;
+}
+/* 400 寬約 13px，720 寬約 18px；很扁的視窗照高度算，不讓字幕把影片擠掉 */
+.mini-sub {
+  flex: 0 1 auto; min-height: 0; max-height: 40%; overflow-y: auto; padding: 0.5em 0.8em; line-height: 1.6;
+  border-top: 1px solid var(--line-soft);
+  font-size: clamp(13px, min(1.56cqw + 6.75px, 2.6cqh + 5px), 22px);
+}
+.mini-sub .vb-zh { font-size: 0.9em; }
+.mini-sub[lang="ja"] { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", var(--font); }
+.mini-sub mark { background: rgba(227, 176, 75, 0.3); color: inherit; border-radius: 2px; }
+.mini-sub rt { font-size: 0.55em; color: var(--muted); }
+.mini-acts { display: flex; align-items: center; gap: 6px; padding: 7px 8px; border-top: 1px solid var(--line-soft); }
+.mini-acts .btn.on { color: var(--accent); border-color: rgba(227, 176, 75, 0.45); background: var(--accent-soft); }
+.mini-video video { cursor: pointer; }
+.mini-grip { position: absolute; width: 14px; height: 14px; touch-action: none; }
+/* 四邊是細長條，四個角疊在上面 */
+.mini-grip.n, .mini-grip.s { left: 14px; right: 14px; width: auto; height: 5px; cursor: ns-resize; }
+.mini-grip.w, .mini-grip.e { top: 14px; bottom: 14px; height: auto; width: 5px; cursor: ew-resize; }
+.mini-grip.n { top: 0; }
+.mini-grip.s { bottom: 0; }
+.mini-grip.w { left: 0; }
+.mini-grip.e { right: 0; }
+.mini-grip.nw { left: 0; top: 0; cursor: nwse-resize; }
+.mini-grip.ne { right: 0; top: 0; cursor: nesw-resize; }
+.mini-grip.sw { left: 0; bottom: 0; cursor: nesw-resize; }
+.mini-grip.se { right: 0; bottom: 0; cursor: nwse-resize; }
+.mini-grip.se::after {
+  content: ""; position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px;
+  border-right: 2px solid var(--faint); border-bottom: 2px solid var(--faint); border-radius: 0 0 2px 0;
+}
+
+@media (max-width: 900px) {
+  .vb-row { grid-template-columns: minmax(120px, 1fr) minmax(0, 1.6fr) 56px 154px; }
+  .vb-row .vb-lv, .vb-row .vb-col-videos { display: none; }
+  .lookup-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- 手機、平板（版面的分法見 style.css 的「手機、平板、窄視窗」） ---------- */
+
+@media (hover: none) and (pointer: coarse) {
+  .vb-exacts { opacity: 1; }
+  .wd-hint { display: none; }
+  .wp-mini { width: 40px; }
+  .wp-ex { padding: 6px 5px; }
+  .wp-stbtns .btn, .wp-stbtns.small .btn { height: 40px; padding: 0 10px; font-size: 13px; }
+  .wp-links { gap: 2px; font-size: 13px; }
+  .wp-links a { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; padding: 0 6px; }
+  /* 次要的小字在手機上至少 12px */
+  #vb-lang button span, .vb-status button span, .vb-word .wp-tag, .vb-src, .vb-headrow, .vb-exi time { font-size: 12px; }
+  .wp-tag, .wp-src, .wp-pos, .wp-label, .wp-st, .wp-acc { font-size: max(12px, 0.8em); }
+  .wp-en { font-size: max(12px, 0.82em); }
+  .wp-meta { font-size: max(12px, 0.84em); }
+  .wp-chain { font-size: max(12px, 0.86em); }
+  .wp-mini { font-size: max(12px, 0.8em); }
+  .wp-ex { font-size: max(13px, 0.9em); }
+  .wp-ex small { font-size: max(12px, 0.88em); }
+  .wp-ex time { font-size: max(12px, 0.78em); }
+  .mini-sub .vb-zh { font-size: max(12px, 0.9em); }
+  .vb-st { height: 40px; min-width: 40px; padding: 0 8px; white-space: nowrap; }
+  .vb-status button { height: 40px; }
+  .vb-page { min-width: 40px; height: 40px; }
+  #vb-goto, #vb-size, .vocab-tools select { height: 40px; }
+  .mini-head { padding: 0 0 0 10px; }
+  /* 設定頁的查字方式、停多久、查字時暫停都是給滑鼠的：手指一律點一下字，打開完整解釋並暫停 */
+  .lookup-grid { display: none; }
+}
+
+@media (max-width: 1000px), (max-width: 1280px) and (hover: none) and (pointer: coarse) {
+  #wpop.pinned, #wpop.in-panel { max-width: calc(100vw - 16px); }
+  #wpop.in-panel { max-height: 60vh; max-height: 60dvh; }
+  /* 釘選卡的不會／已會／忽略那一列固定在卡片底部，例句再長也不用捲到最下面才按得到 */
+  #wpop.pinned { padding-bottom: 0; }
+  #wpop.pinned .wp-actions {
+    position: sticky; bottom: 0; z-index: 1;
+    margin: 0 -12px; padding: 8px 12px 10px;
+    background: rgb(24, 25, 29);
+  }
+  /* 直向：釘選的查字卡從底部滑出來，蓋在分頁上，不擋影片和字幕（滑鼠停在字上的小卡照桌面放在字幕旁邊） */
+  @media not all and (min-aspect-ratio: 1/1) {
+    body:not(.in-fs) #screen > #wpop.pinned {
+      position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 36;
+      width: auto; max-width: none; max-height: 55vh; max-height: max(40vh, var(--below-screen, 55vh));
+      transform: none !important;
+      padding: 12px max(14px, env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
+      border-radius: 12px 12px 0 0; border-width: 1px 0 0; font-size: 15px;
+      background: rgb(24, 25, 29); box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+    }
+  }
+  /* 滑出來的卡片（直向、手機橫放）左右留白比較寬，底下留出 iPhone 的橫條 */
+  @media not all and (min-aspect-ratio: 1/1), (max-height: 560px) {
+    body:not(.in-fs) #screen > #wpop.pinned .wp-actions {
+      margin: 0 -14px; padding: 8px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+  /* 手機橫放：蓋在右邊那一欄上 */
+  @media (min-aspect-ratio: 1/1) and (max-height: 560px) {
+    body:not(.in-fs) #screen > #wpop.pinned {
+      position: fixed; left: auto; right: env(safe-area-inset-right, 0px);
+      top: calc(46px + env(safe-area-inset-top, 0px)); bottom: env(safe-area-inset-bottom, 0px); z-index: 36;
+      width: var(--cside); max-width: none; max-height: none; padding: 10px 14px 0; background: rgb(24, 25, 29);
+      transform: none !important; border-radius: 0; border-width: 0 0 0 1px; font-size: 14px;
+    }
+    /* 收起右欄時頂列也收起來了，卡片從最上面開始 */
+    body.immersive:not(.in-fs) #screen > #wpop.pinned { top: env(safe-area-inset-top, 0px); }
+  }
+}
+
+@media (max-width: 700px) {
+  .dict-row span { min-width: 0; overflow-wrap: anywhere; }
+  .vocab-inner { gap: 10px; padding-top: 14px; }
+  .vocab-head { gap: 8px 10px; }
+  .vocab-head h1 { font-size: 18px; }
+  #vb-scope { flex: 1 1 100%; max-width: 100%; min-width: 0; }
+  #vb-search { flex: 1 1 100%; width: auto; }
+  .vocab-head > .grow, .vocab-tools > .grow { display: none; }
+  .vocab-tools { gap: 8px 14px; }
+  /* 狀態篩選排成三個一行 */
+  .vb-status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 1px; background: var(--line); }
+  .vb-status button + button { border-left: 0; }
+  .vb-status button { padding: 0 6px; }
+  /* 單字列：第一行單字、次數、狀態按鈕，第二行整行給解釋 */
+  .vb-headrow { display: none; }
+  .vb-row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "word num acts" "gloss gloss gloss"; gap: 2px 10px; padding: 8px 10px; }
+  .vb-row .num { color: var(--faint); }
+  .vb-row .vb-word { grid-area: word; }
+  .vb-row .vb-gloss { grid-area: gloss; }
+  .vb-row .num { grid-area: num; }
+  .vb-row .vb-acts { grid-area: acts; }
+  .vb-headrow + #vb-list .vb-row:first-child { border-top: 0; }
+  .vb-pager > .grow { flex-basis: 100%; height: 0; }
+  /* 單字視窗的例句：按鈕放到句子下面 */
+  .vb-exi { grid-template-columns: 44px minmax(0, 1fr); }
+  .vb-exacts { grid-column: 2; flex-wrap: wrap; }
+  .vb-ext { flex-wrap: wrap; }
+  .wd-word .wp-word { font-size: 22px; }
+}
+
+/* 小視窗：手機直向固定在底部、滿版寬，不能拖 */
+@media (max-width: 600px) {
+  .mini {
+    --mini-sheet: 1;
+    left: 0 !important; right: 0; top: auto !important; bottom: 0;
+    width: auto !important; height: auto !important; max-height: 85vh; max-height: 85dvh;
+    border-radius: 12px 12px 0 0; border-width: 1px 0 0; container-type: inline-size;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mini-video { flex: none; aspect-ratio: 16 / 9; min-height: 0; }
+  .mini-sub { max-height: 28vh; max-height: 28dvh; }
+  .mini-grip { display: none; }
+  .mini-head { cursor: default; }
+  .wl-toast { max-width: calc(100vw - 24px); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .wl-toast span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 從查字卡打開的小視窗改放在畫面最上面，蓋住已經暫停的影片：底部查字卡的不會／已會／忽略還按得到 */
+  body > .mini {
+    top: 0 !important; bottom: auto;
+    border-radius: 0 0 12px 12px; border-width: 0 0 1px;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: 0;
+  }
+  /* 單字視窗裡：小視窗排在視窗最上面，視窗自己變矮，標題列、例句、底下的不會／已會／忽略都按得到 */
+  .dialog[open]:has(> .mini:not([hidden])) { display: flex; flex-direction: column; }
+  .dialog[open]:has(> .mini:not([hidden])) > form { flex: 1 1 auto; min-height: 0; max-height: none; }
+  .dialog[open] > .mini {
+    position: static; order: -1; flex: none; max-height: none;
+    border-radius: 0; border-width: 0 0 1px; box-shadow: none; padding-bottom: 0;
+  }
+  .dialog[open] > .mini .mini-sub { max-height: 16vh; max-height: 16dvh; }
+}
+/* 手機橫放：固定在右半邊 */
+@media (max-width: 1000px) and (min-aspect-ratio: 1/1) and (max-height: 560px),
+       (max-width: 1280px) and (hover: none) and (pointer: coarse) and (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  .mini {
+    --mini-sheet: 1;
+    left: auto !important; right: env(safe-area-inset-right, 0px); top: calc(46px + env(safe-area-inset-top, 0px)) !important; bottom: 0;
+    width: min(50vw, 440px) !important; height: auto !important;
+    border-radius: 0; border-width: 0 0 0 1px; container-type: inline-size;
+  }
+  .mini-video { flex: 1 1 0; min-height: 90px; }
+  .mini-grip { display: none; }
+  .mini-head { cursor: default; }
+  /* 從查字卡打開的：放在左邊影片那一欄（影片已經暫停），右邊的查字卡還按得到 */
+  body > .mini {
+    left: env(safe-area-inset-left, 0px) !important; right: auto;
+    width: calc(100vw - var(--cside, 50vw) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) !important;
+    border-width: 0 1px 0 0;
+  }
+  body.immersive > .mini { top: env(safe-area-inset-top, 0px) !important; }
+  /* 單字視窗開著：視窗靠左、小視窗在右半邊，並排不互相蓋住 */
+  .dialog[open]:has(> .mini:not([hidden])) {
+    margin-left: env(safe-area-inset-left, 0px); margin-right: auto; max-width: none;
+    width: calc(100vw - min(50vw, 440px) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  }
+  .dialog[open] > .mini { top: env(safe-area-inset-top, 0px) !important; }
+}

@@ -1,0 +1,3 @@
+
+Bilingual Subtitles 還開著，或另一個視窗正在安裝，現在不能修復，什麼都沒有刪。
+請先關掉 Bilingual Subtitles 的黑色視窗（也可以重新開機），再執行一次 repair.bat。

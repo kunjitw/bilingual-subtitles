@@ -1,0 +1,94 @@
+# 使用者資料：播放清單、字幕、影片、log、字典、快取
+/data/
+
+# 模型與執行檔：安裝時或設定頁下載
+/models/
+/bin/
+*.gguf
+*.safetensors
+*.onnx
+*.ckpt
+*.pt
+*.pth
+*.exe
+*.dll
+
+# 打包計畫的執行環境（Python、套件、ffmpeg、llama.cpp、快取）
+/runtime/
+
+# 完整包附帶的下載檔、打包出來的 zip
+/offline/
+*.zip
+*.zip.sha256
+
+# 開發模式標記：有這個檔案時 start.bat 用 conda env subtitle 啟動，不走安裝流程（發佈的 zip 也排除）
+/.dev
+
+# 不上傳的私人資料夾：實驗腳本、維護腳本、原型、研究資料、規劃文件
+/private/
+
+# 不公開的規劃文件
+/docs/internal/
+
+# 影片、音訊、字幕匯出檔
+*.mp4
+*.MP4
+*.m4v
+*.mov
+*.MOV
+*.mkv
+*.webm
+*.avi
+*.flv
+*.m2ts
+*.wmv
+*.mpg
+*.mpeg
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.opus
+*.aac
+*.srt
+*.vtt
+*.ass
+
+# 測試產出與樣本
+/tests/out/
+/tests/samples/
+
+# 資料庫、備份、log、暫存
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.bak.json
+*.log
+*.tmp
+
+# cookies 與金鑰
+*cookies*.txt
+.env
+.env.*
+
+# Python / uv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Node
+node_modules/
+
+# 編輯器、系統
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

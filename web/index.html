@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bilingual Subtitles</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='6' width='28' height='20' rx='3' fill='%23e3b04b'/%3E%3Crect x='7' y='18' width='10' height='3' rx='1' fill='%23141414'/%3E%3Crect x='19' y='18' width='6' height='3' rx='1' fill='%23141414'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/vocab.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM19 5.5v13L9.5 12z" fill="currentColor"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM5 5.5v13l9.5-6.5z" fill="currentColor"/></symbol>
+  <symbol id="i-replay" viewBox="0 0 24 24"><path d="M12 5V2L7.5 6 12 10V7a5.5 5.5 0 1 1-5.5 5.5H4.5A7.5 7.5 0 1 0 12 5z" fill="currentColor"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M7 7h9.5l-2-2L16 3.5 20.5 8 16 12.5 14.5 11l2-2H7a2 2 0 0 0-2 2v2H3v-2a4 4 0 0 1 4-4zm10 10H7.5l2 2L8 20.5 3.5 16 8 11.5 9.5 13l-2 2H17a2 2 0 0 0 2-2v-2h2v2a4 4 0 0 1-4 4z" fill="currentColor"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM16 8.5a4.5 4.5 0 0 1 0 7l-1.2-1.4a2.7 2.7 0 0 0 0-4.2zM18.3 5.8a8 8 0 0 1 0 12.4l-1.2-1.4a6.2 6.2 0 0 0 0-9.6z" fill="currentColor"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM15.5 9.2l1.3-1.3 2.2 2.2 2.2-2.2 1.3 1.3-2.2 2.2 2.2 2.2-1.3 1.3-2.2-2.2-2.2 2.2-1.3-1.3 2.2-2.2z" fill="currentColor"/></symbol>
+  <symbol id="i-fs" viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z" fill="currentColor"/></symbol>
+  <symbol id="i-fs-exit" viewBox="0 0 24 24"><path d="M8 4h2v6H4V8h4zM14 4h2v4h4v2h-6zM4 14h6v6H8v-4H4zM14 14h6v2h-4v4h-2z" fill="currentColor"/></symbol>
+  <symbol id="i-cc" viewBox="0 0 24 24"><path d="M3 5h18v14H3zm2 2v10h14V7zm2 5.5h4v2H7zm5.5 0H17v2h-4.5zM7 9.5h7v2H7zm8.5 0H17v2h-1.5z" fill="currentColor"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 3.5 2.5 8 7 12.5V9h8V7H7zM17 11.5V15H9v2h8v3.5l4.5-4.5z" fill="currentColor"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 7l6 6-1.4 1.4L12 9.8l-4.6 4.6L6 13z" fill="currentColor"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 17l-6-6 1.4-1.4 4.6 4.6 4.6-4.6L18 11z" fill="currentColor"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="currentColor"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zm7 1.5V8h3.5zM10 11v6l5-3z" fill="currentColor"/></symbol>
+  <symbol id="i-panel-left" viewBox="0 0 24 24"><path d="M3 4h18v16H3zm2 2v12h4V6zm6 0v12h8V6z" fill="currentColor"/></symbol>
+  <symbol id="i-panel-right" viewBox="0 0 24 24"><path d="M3 4h18v16H3zm2 2v12h8V6zm10 0v12h4V6z" fill="currentColor"/></symbol>
+  <symbol id="i-drive" viewBox="0 0 24 24"><path d="M4 13h16v6H4zm0-2 2.5-6h11L20 11zm12 4.5v2h2v-2z" fill="currentColor"/></symbol>
+</svg>
+
+<header class="topbar">
+  <button class="icon-btn panel-toggle" id="toggle-left" title="收起／展開播放列表（[）"><svg><use href="#i-panel-left"/></svg></button>
+  <button class="brand" id="brand" title="回到播放器">Bilingual Subtitles</button>
+  <nav class="topnav" id="topnav">
+    <button data-view="player" class="on">播放器</button>
+    <button data-view="vocab">單字</button>
+    <button data-view="settings">設定</button>
+  </nav>
+  <button class="btn primary" id="btn-add"><span>新增<span class="add-more">影片</span></span></button>
+  <div class="grow"></div>
+  <!-- 第一次自動安裝還在進行時才出現，點了打開安裝進度頁 -->
+  <button class="sbadge" id="setup-badge" title="看安裝進度" hidden>
+    <span class="dot"></span>
+    <span class="sb-long" id="setup-badge-long"></span>
+    <span class="sb-short" id="setup-badge-short"></span>
+  </button>
+  <button class="gpu" id="gpu" title="查看佇列">
+    <span class="dot"></span>
+    <span class="gpu-text" id="gpu-text">閒置</span>
+    <span class="gpu-short">暫停</span>
+    <span class="gpu-vram" id="gpu-vram"></span>
+  </button>
+  <button class="icon-btn panel-toggle" id="toggle-right" title="收起／展開逐字稿與佇列（]）"><svg><use href="#i-panel-right"/></svg></button>
+  <button class="icon-btn" id="btn-help" title="快捷鍵">?</button>
+</header>
+
+<div class="offline" id="offline" hidden>連不到程式，請確認 start.bat 的視窗還開著</div>
+
+<!-- 第一次自動安裝的進度頁（app.js 的「首次自動安裝」） -->
+<section class="setup" id="setup" hidden aria-labelledby="setup-title">
+  <div class="setup-box" id="setup-box" tabindex="-1">
+    <h1 id="setup-title"></h1>
+    <p class="setup-sub" id="setup-sub"></p>
+    <p class="setup-gpu" id="setup-gpu" hidden></p>
+    <div class="setup-notes" id="setup-notes" hidden></div>
+    <div class="setup-total" id="setup-total" hidden>
+      <div class="setup-bar"><i id="setup-total-bar"></i></div>
+      <div class="setup-total-text" id="setup-total-text"></div>
+    </div>
+    <ul class="setup-items" id="setup-items" hidden></ul>
+    <p class="setup-ready" id="setup-ready" hidden></p>
+    <div class="setup-missing" id="setup-missing" hidden></div>
+    <div class="setup-block" id="setup-block" hidden>
+      <p class="setup-why" id="setup-why"></p>
+      <p class="setup-how" id="setup-how"></p>
+    </div>
+    <div class="setup-actions">
+      <button type="button" class="setup-link" id="setup-change">改選模型</button>
+      <div class="grow"></div>
+      <button type="button" class="btn" id="setup-close" hidden>關閉</button>
+      <button type="button" class="btn primary" id="setup-main">先去用</button>
+    </div>
+    <p class="setup-foot" id="setup-foot" hidden>關掉網頁也會繼續裝。關掉黑色視窗會暫停，下次打開接著裝。</p>
+  </div>
+</section>
+
+<main class="layout">
+  <aside class="library">
+    <div class="pane-head lib-head">
+      <input id="search" type="search" placeholder="搜尋播放列表" autocomplete="off">
+      <div class="lang-filter" id="lang-filter">
+        <button data-v="all" class="on">全部<span></span></button>
+        <button data-v="ja">日文<span></span></button>
+        <button data-v="en">英文<span></span></button>
+        <button data-v="zh">中文<span></span></button>
+      </div>
+    </div>
+    <ul class="media-list" id="media-list"></ul>
+  </aside>
+
+  <section class="stage">
+   <div class="screen" id="screen">
+    <div class="outside top" id="zone-outTop"></div>
+    <div class="player" id="player">
+      <video id="video" preload="metadata" playsinline></video>
+      <div class="subs" id="subs">
+        <div class="zone in-top" id="zone-inTop"></div>
+        <div class="zone in-bottom" id="zone-inBottom"></div>
+      </div>
+      <div class="sub-lines-pool" hidden>
+        <div class="sub-line l1" id="line1"><span></span></div>
+        <div class="sub-line l2" id="line2"><span></span></div>
+      </div>
+      <div class="player-msg" id="player-msg" hidden></div>
+      <div class="player-empty" id="player-empty">
+        <p>從<span class="desk-only">左邊的</span>播放列表選一部影片</p>
+      </div>
+      <div class="controls" id="controls">
+        <div class="seek" id="seek">
+          <div class="seek-track"><div class="seek-buf" id="seek-buf"></div><div class="seek-fill" id="seek-fill"></div></div>
+          <div class="seek-tip" id="seek-tip" hidden></div>
+        </div>
+        <div class="ctrl-row">
+          <button class="cbtn" id="c-play" title="播放 / 暫停（空白鍵）"><svg><use href="#i-play"/></svg></button>
+          <button class="cbtn" id="c-prev" title="上一句（A）"><svg><use href="#i-prev"/></svg></button>
+          <button class="cbtn" id="c-replay" title="重播這一句（R）"><svg><use href="#i-replay"/></svg></button>
+          <button class="cbtn" id="c-next" title="下一句（D）"><svg><use href="#i-next"/></svg></button>
+          <span class="ctime" id="c-time">0:00 / 0:00</span>
+          <div class="grow"></div>
+          <button class="cbtn toggle" id="c-loop" title="循環這一句（L）"><svg><use href="#i-loop"/></svg></button>
+          <select class="crate" id="c-rate" title="播放速度（, 和 .）">
+            <option value="0.5">0.5x</option><option value="0.6">0.6x</option><option value="0.75">0.75x</option>
+            <option value="0.9">0.9x</option><option value="1" selected>1x</option><option value="1.1">1.1x</option>
+            <option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option>
+          </select>
+          <button class="cbtn" id="c-mute" title="靜音（M）"><svg><use href="#i-vol"/></svg></button>
+          <input class="cvol" id="c-vol" type="range" min="0" max="1" step="0.02" value="1">
+          <button class="cbtn" id="c-panel" title="展開右欄和頂列"><svg><use href="#i-panel-right"/></svg></button>
+          <button class="cbtn" id="c-fs" title="全螢幕（F）"><svg><use href="#i-fs"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="outside bottom" id="zone-outBottom"></div>
+   </div>
+
+    <div class="deck" id="deck" hidden>
+      <div class="deck-row">
+        <div class="title-block">
+          <h1 id="media-title"></h1>
+          <div class="title-sub" id="media-title-sub" hidden></div>
+          <div class="media-meta" id="media-meta"></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="btn-transcribe">轉字幕</button>
+          <button class="btn" id="btn-translate">翻譯成中文</button>
+          <button class="btn" id="btn-files">字幕管理</button>
+          <button class="btn icon-only" id="btn-more" data-menu="menu-more" title="更多"><svg><use href="#i-more"/></svg></button>
+        </div>
+      </div>
+      <div class="subbar">
+        <div class="line-ctl">
+          <span class="lbl">原文</span>
+          <select id="sel-1"></select>
+          <select id="place-1" class="place" title="原文顯示的位置"></select>
+        </div>
+        <button class="icon-btn small" id="btn-swap" title="交換上下位置"><svg><use href="#i-swap"/></svg></button>
+        <div class="line-ctl">
+          <span class="lbl">翻譯</span>
+          <span class="sel-fit">
+            <select id="sel-2" title="只列出從目前原文翻譯出來的字幕"></select>
+            <select class="sel-ghost" id="sel-2-ghost" aria-hidden="true" tabindex="-1" inert></select>
+          </span>
+          <select id="place-2" class="place" title="翻譯顯示的位置"></select>
+        </div>
+        <div class="sep"></div>
+        <label class="check" title="練習聽力用，滑鼠移到翻譯上才顯示（B）">
+          <input type="checkbox" id="set-blur2"> 遮住翻譯
+        </label>
+        <div class="grow"></div>
+        <button class="btn small" id="btn-look" data-menu="menu-look">字幕外觀</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <nav class="tabs">
+      <button class="tab on" data-tab="transcript">逐字稿</button>
+      <!-- 手機、平板才出現：影片資訊和字幕選擇、播放列表放進分頁 -->
+      <button class="tab tab-compact" data-tab="info">字幕設定</button>
+      <button class="tab tab-compact" data-tab="library">播放列表</button>
+      <button class="tab" data-tab="queue">佇列<span class="count" id="queue-count"></span></button>
+    </nav>
+    <div class="tab-pane" id="pane-transcript">
+      <div class="pane-head row">
+        <input id="tr-search" type="search" placeholder="搜尋字幕" autocomplete="off">
+        <label class="check small" title="播放時自動捲到目前這句"><input type="checkbox" id="tr-follow" checked> 跟隨</label>
+      </div>
+      <div class="tr-status" id="tr-status" hidden></div>
+      <ol class="transcript" id="transcript"></ol>
+    </div>
+    <div class="tab-pane" id="pane-queue" hidden>
+      <div class="pane-head row queue-head">
+        <span class="muted" id="queue-summary"></span>
+        <div class="grow"></div>
+        <button class="btn small primary" id="btn-queue-resume" hidden>繼續佇列</button>
+        <button class="btn small" id="btn-gpu-free" title="馬上把顯卡上的模型全部釋放（例如要玩遊戲）">釋放顯卡</button>
+        <button class="btn small" id="btn-clear">清除已結束</button>
+      </div>
+      <div class="queue-note" id="queue-gpu-note" hidden></div>
+      <ul class="queue" id="queue"></ul>
+    </div>
+  </aside>
+</main>
+
+<section class="settings-page" id="settings-page" hidden>
+  <div class="settings-inner">
+    <header class="settings-head">
+      <h1>設定</h1>
+      <span class="hint">變更會自動儲存。按 Esc 或上方的「播放器」回去。</span>
+    </header>
+
+    <section class="card">
+      <h2>翻譯方式</h2>
+      <label class="check inline">模式
+        <select id="set-translation-mode">
+          <option value="line">逐行對照：每行各自翻譯，保持原文語序（適合對照學習）</option>
+          <option value="sentence">整句通順：同一句話合起來翻，中文較自然但可能跨行</option>
+        </select>
+      </label>
+      <p class="hint">只影響之後的翻譯任務，已經翻好的字幕不會改變。</p>
+      <div class="row-actions">
+        <button class="btn" id="btn-redo-translations">把舊的整句翻譯改成逐行對照重翻</button>
+        <span class="hint" id="redo-hint"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>字幕時間軸</h2>
+      <label class="check"><input type="checkbox" id="set-health-check"> 轉完字幕後自動檢查並修正時間軸</label>
+      <p class="hint">用 Qwen3-ASR 重新聽每一行字幕的時間範圍，對不上的段落用對齊模型重新對時間，比原本更對得上才採用。逐行翻譯會跟著調整。</p>
+      <div class="row-actions">
+        <button class="btn" id="btn-health-all">檢查所有尚未檢查的字幕</button>
+        <span class="hint" id="health-hint"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>預設模型</h2>
+      <p class="hint">新增影片時會用這裡的設定，送出前還是可以在「模型」裡臨時改。</p>
+      <div class="combo-table" id="combo-table"></div>
+    </section>
+
+    <section class="card" id="setup-card" hidden>
+      <h2>自動安裝</h2>
+      <p class="hint">照顯示卡挑建議的模型，缺的自動下載。</p>
+      <div class="row-actions">
+        <button class="btn" id="btn-setup-install">重新偵測並安裝建議模型</button>
+        <span class="hint" id="setup-card-status"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>模型管理</h2>
+      <p class="hint">模型放在 <span class="mono" id="models-dir"></span>，下載會排進佇列。<span id="models-storage"></span></p>
+      <div class="model-list" id="model-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>下載影片</h2>
+      <p class="hint">YouTube 有時會要求登入驗證（Sign in to confirm you're not a bot），指定一個已登入的瀏覽器共用 cookies 就能解決。</p>
+      <div class="form-grid">
+        <label>瀏覽器 cookies
+          <select id="set-cookies-browser">
+            <option value="">不使用</option>
+            <option value="chrome">Chrome</option>
+            <option value="edge">Edge</option>
+            <option value="firefox">Firefox</option>
+            <option value="brave">Brave</option>
+            <option value="vivaldi">Vivaldi</option>
+            <option value="opera">Opera</option>
+          </select>
+        </label>
+        <label>或指定 cookies.txt
+          <input type="text" id="set-cookies-file" placeholder="例如 E:\cookies.txt，留空則使用上面的瀏覽器">
+        </label>
+      </div>
+      <p class="hint">Chrome 較新版本會鎖住 cookies，若失敗請改用 Firefox，或用擴充套件匯出 cookies.txt。</p>
+    </section>
+
+    <section class="card">
+      <h2>影片標題</h2>
+      <label class="check inline">顯示方式
+        <select id="set-title-mode">
+          <option value="both">原文＋繁體中文</option>
+          <option value="original">只顯示原文</option>
+          <option value="translated">只顯示繁體中文</option>
+        </select>
+      </label>
+      <div class="row-actions">
+        <button class="btn" id="btn-translate-titles">翻譯還沒翻譯的標題</button>
+        <span class="hint" id="titles-hint">跑翻譯任務時也會順便翻譯標題，不用另外載入模型。</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>播放</h2>
+      <label class="check"><input type="checkbox" id="set-autoplay"> 開啟影片時自動播放</label>
+      <label class="check"><input type="checkbox" id="set-autonext"> 播完自動播下一部</label>
+      <label class="check"><input type="checkbox" id="set-resume"> 打開影片時從上次看到的地方繼續</label>
+      <label class="check inline">重複播放
+        <select id="set-repeat">
+          <option value="off">不重複</option>
+          <option value="one">單部重複</option>
+          <option value="all">播放列表循環</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="card" id="lookup-card">
+      <h2>查字</h2>
+      <label class="check"><input type="checkbox" id="set-lookup-on"> <span class="t-mouse">滑鼠移到日文、英文字幕的字上，顯示中文解釋</span><span class="t-touch">點一下日文、英文字幕上的字，顯示中文解釋</span></label>
+      <div class="lookup-grid">
+        <label class="check inline">查字方式
+          <select id="set-lookup-trigger">
+            <option value="hover">滑鼠停在字上</option>
+            <option value="shift">按住 Shift 再移到字上</option>
+            <option value="click">點一下字</option>
+          </select>
+        </label>
+        <label class="check inline">停多久才顯示
+          <select id="set-hover-delay">
+            <option value="0">馬上</option>
+            <option value="150">0.15 秒</option>
+            <option value="300">0.3 秒</option>
+            <option value="500">0.5 秒</option>
+          </select>
+        </label>
+        <label class="check inline">查字時暫停
+          <select id="set-lookup-pause">
+            <option value="cueEnd">這句播完才暫停</option>
+            <option value="now">立刻暫停</option>
+            <option value="off">不暫停</option>
+          </select>
+        </label>
+        <label class="check inline">ASMR 影片
+          <select id="set-lookup-pause-asmr">
+            <option value="cueEnd">這句播完才暫停</option>
+            <option value="now">立刻暫停</option>
+            <option value="off">不暫停</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint"><span class="t-mouse">點一下字會釘住完整解釋並暫停影片，再點一次或按 Esc 關閉。卡片開著時按 X 標成已會、I 忽略。日文遇到切錯的字，按住 Shift 移過去可以直接查。</span><span class="t-touch">手機、平板上點一下字會打開完整解釋並暫停影片，再點一次同一個字或點別的地方關閉。假名選「點字才顯示」時，點過的字會順便顯示假名。</span></p>
+    </section>
+
+    <section class="card" id="dict-card">
+      <h2>字典與單字解釋</h2>
+      <div class="dict-status" id="dict-status"></div>
+      <label class="check"><input type="checkbox" id="set-auto-glosses"> 日文影片用 Hy-MT2-7B 翻譯完，順便把新單字的英文解釋翻成中文</label>
+      <div class="row-actions">
+        <button class="btn" id="btn-glosses">把所有日文單字的解釋翻成中文</button>
+        <span class="hint" id="glosses-hint"></span>
+      </div>
+      <p class="hint">日文字典只有英文解釋，中文是用 Hy-MT2-7B 排進佇列翻好存起來的，查字時不會載入模型。字典放在 <span class="mono" id="dict-dir"></span>。</p>
+      <p class="hint" id="dict-credits">資料來源：JMdict（EDRDG，CC BY-SA 4.0，<a href="https://www.edrdg.org/edrdg/licence.html" target="_blank" rel="noreferrer" style="color: inherit; text-decoration: underline">授權說明</a>）、JLPT 詞表（Stephen Kraus，CC BY-SA 4.0；原始資料 Jonathan Waller，CC BY）、Yomitan 去活用規則（GPL-3.0-or-later）、Kanjium 重音（Uros O.，CC BY-SA 4.0）、ECDICT（MIT）、Octanove C1/C2（Octanove Labs，CC BY-SA 4.0）、wordfreq（Robyn Speer，詞頻資料 CC BY-SA 4.0）、CKIP Transformers（GPL-3.0）、中華民國教育部（Ministry of Education, R.O.C.）《重編國語辭典修訂本》（臺灣學術網路第六版，https://dict.revised.moe.edu.tw/，CC BY-ND 3.0 TW）。</p>
+      <p class="hint">英文 A1 到 B2 等級：The CEFR-J Wordlist Version 1.5. Compiled by Yukio Tono, Tokyo University of Foreign Studies. Retrieved from http://www.cefr-j.org/download.html on 1/20/2020.（從 Open Language Profiles 取得）</p>
+      <p class="hint">每一項的網址和授權全文連結，見專案根目錄的 THIRD_PARTY_NOTICES.md。</p>
+    </section>
+
+    <section class="card">
+      <h2>佇列</h2>
+      <label class="check"><input type="checkbox" id="set-group"> 把用同一個模型的任務排在一起（省下重複載入模型的時間）</label>
+      <p class="hint">關閉的話就完全照加入順序執行。</p>
+    </section>
+
+    <section class="card" id="lan-card">
+      <h2>手機、平板</h2>
+      <label class="check"><input type="checkbox" id="set-lan-access"> 讓同一個網路的手機、平板連線</label>
+      <p class="hint">打開後同一個網路的手機、平板可以用 http://電腦的IP:埠 連進來，不用密碼；在公共網路上請關掉。</p>
+      <p class="hint">打開要重新啟動程式才會生效，第一次 Windows 防火牆會問要不要允許。關掉馬上生效。</p>
+      <p class="hint" id="lan-status"></p>
+    </section>
+
+    <section class="card">
+      <h2>顯示卡</h2>
+      <div class="gpu-info" id="gpu-info"></div>
+      <div class="row-actions">
+        <span class="hint" id="gpu-loaded"></span>
+        <button class="btn small primary" id="btn-set-queue-resume" hidden>繼續佇列</button>
+        <button class="btn small" id="btn-gpu-release">釋放顯卡</button>
+      </div>
+      <p class="hint">模型一定整個放進顯存。辨識、對齊、檢查時間軸的模型放得下就同時載入，接著處理下一部影片不用重新載入；放不下就輪流載入。佇列沒有任務滿 2 分鐘會自動釋放顯卡，要馬上玩遊戲可以按「釋放顯卡」（佇列裡的「釋放顯卡」也一樣）。建議在 NVIDIA 控制面板把這個程式的「CUDA 系統記憶體備援原則」設成「不偏好系統記憶體備援」。</p>
+    </section>
+  </div>
+</section>
+
+<section class="vocab-page" id="vocab-page" hidden>
+  <div class="vocab-inner">
+    <header class="vocab-head">
+      <h1>單字</h1>
+      <div class="seg" id="vb-lang">
+        <button type="button" data-v="ja">日文<span></span></button>
+        <button type="button" data-v="en">英文<span></span></button>
+        <button type="button" data-v="zh">中文<span></span></button>
+      </div>
+      <select id="vb-scope" title="統計範圍"></select>
+      <input type="search" id="vb-search" placeholder="搜尋單字、讀音或解釋" autocomplete="off">
+      <div class="grow"></div>
+      <span class="vb-summary" id="vb-summary"></span>
+    </header>
+    <div class="vocab-tools">
+      <div class="seg vb-status" id="vb-status">
+        <button type="button" data-v="learn" title="未標記加上不會">要學的<span></span></button>
+        <button type="button" data-v="0">未標記<span></span></button>
+        <button type="button" data-v="1">不會<span></span></button>
+        <button type="button" data-v="2">已會<span></span></button>
+        <button type="button" data-v="3">忽略<span></span></button>
+        <button type="button" data-v="all">全部<span></span></button>
+      </div>
+      <label class="check small" id="vb-other-wrap"><input type="checkbox" id="vb-other"> 顯示人名、地名、感嘆詞這類</label>
+      <div class="grow"></div>
+      <label class="check small inline">排序
+        <select id="vb-sort">
+          <option value="count">出現次數</option>
+          <option value="videos">出現在幾部影片</option>
+          <option value="first">第一次出現</option>
+          <option value="alpha">五十音／字母</option>
+        </select>
+      </label>
+    </div>
+    <div class="vb-note" id="vb-note" hidden></div>
+    <div class="vb-table" id="vb-table">
+      <div class="vb-row vb-headrow">
+        <span>單字</span><span>解釋</span><span>等級</span><span class="num">次數</span><span class="num vb-col-videos">影片</span><span></span>
+      </div>
+      <div id="vb-list"></div>
+    </div>
+    <div class="vb-pager" id="vb-pager" hidden>
+      <button type="button" class="btn small" id="vb-prev">上一頁</button>
+      <div class="vb-pages" id="vb-pages"></div>
+      <button type="button" class="btn small" id="vb-next">下一頁</button>
+      <div class="grow"></div>
+      <label class="check small inline">跳到第
+        <input type="number" id="vb-goto" min="1" step="1" inputmode="numeric"> 頁
+      </label>
+      <label class="check small inline">每頁
+        <select id="vb-size">
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</section>
+
+<div class="menu" id="menu-files" hidden></div>
+<div class="menu" id="menu-more" hidden></div>
+
+<div class="menu panel" id="menu-look" hidden>
+  <div class="menu-label">字幕外觀</div>
+  <label class="row"><span>原文字級</span><input type="range" id="set-size1" min="2.5" max="10" step="0.1"><b id="v-size1"></b></label>
+  <label class="row"><span>翻譯字級</span><input type="range" id="set-size2" min="2.5" max="10" step="0.1"><b id="v-size2"></b></label>
+  <label class="row"><span>離畫面邊緣</span><input type="range" id="set-pos" min="0" max="25" step="0.5"><b id="v-pos"></b></label>
+  <label class="row"><span>行距</span><input type="range" id="set-gap" min="0" max="60" step="5"><b id="v-gap"></b></label>
+  <label class="row"><span>行寬</span><input type="range" id="set-width" min="50" max="100" step="2"><b id="v-width"></b></label>
+  <div class="menu-sep"></div>
+  <label class="row"><span>影片內樣式</span>
+    <select id="set-style">
+      <option value="outline">描邊</option>
+      <option value="box">半透明底</option>
+      <option value="both">描邊＋底色</option>
+    </select>
+  </label>
+  <label class="row"><span>底色濃度</span><input type="range" id="set-bg" min="0" max="100" step="5"><b id="v-bg"></b></label>
+  <div class="menu-sep"></div>
+  <label class="row"><span>日文假名</span>
+    <select id="set-furi">
+      <option value="all">全部顯示</option>
+      <option value="hover">滑鼠移上去才顯示</option>
+      <option value="off">關閉</option>
+    </select>
+  </label>
+  <div class="menu-sep"></div>
+  <div class="menu-label">影片外字幕</div>
+  <label class="row"><span>保留行數</span>
+    <select id="set-reserve"><option value="1">1 行</option><option value="2">2 行</option><option value="3">3 行</option></select>
+  </label>
+  <label class="row check-row"><input type="checkbox" id="set-letterbox"> <span>有黑邊時放進黑邊，不縮小影片</span></label>
+  <div class="menu-sep"></div>
+  <button class="menu-item" id="set-reset">恢復預設值</button>
+</div>
+
+<dialog class="dialog" id="dlg-add">
+  <form method="dialog" id="form-add" autocomplete="off">
+    <header class="dlg-head">
+      <h2 id="add-title">新增影片</h2>
+      <button type="button" class="icon-btn" data-close title="關閉">×</button>
+    </header>
+    <div class="dlg-body">
+      <section class="field" id="source-field">
+        <div class="seg" id="src-seg">
+          <button type="button" data-v="url" class="on">YouTube</button>
+          <button type="button" data-v="upload">上傳</button>
+        </div>
+        <div class="src-pane" data-pane="url">
+          <input type="url" id="url" placeholder="https://www.youtube.com/watch?v=…">
+          <p class="notice url-dup" id="url-dup" hidden></p>
+          <p class="hint">貼上影片網址，下載好就會自動開始轉字幕。不只 YouTube，Bilibili、X、Vimeo 這些 yt-dlp 支援的網站，貼網址一樣可以。</p>
+        </div>
+        <div class="src-pane" data-pane="upload" hidden>
+          <label class="drop" id="drop">
+            <input type="file" id="upload-file" accept="video/*,audio/*,.mkv,.ts,.flv">
+            <span id="drop-text">把檔案拖到這裡，或點一下選擇</span>
+          </label>
+          <p class="hint">會複製一份到程式的資料夾，從播放列表移除時只刪這份複本，你原本的檔案不會動到</p>
+        </div>
+      </section>
+
+      <section class="field">
+        <div class="label">影片語言</div>
+        <div class="seg" id="lang-seg">
+          <button type="button" data-v="zh">中文</button>
+          <button type="button" data-v="ja">日文</button>
+          <button type="button" data-v="en">英文</button>
+        </div>
+        <p class="hint">不會自動偵測，請選影片裡實際說的語言</p>
+      </section>
+
+      <section class="field" id="model-field" hidden>
+        <div class="label">模型</div>
+        <div class="adv-grid">
+          <label>辨識模型<select id="adv-engine"></select></label>
+          <label id="adv-translator-wrap">翻譯模型<select id="adv-translator"></select></label>
+        </div>
+        <label class="check"><input type="checkbox" id="do-sensitive"> 小聲或耳語較多（提高人聲偵測靈敏度，避免漏句）</label>
+        <p class="hint">預設模型可以在設定頁改。動畫、遊戲語音或耳語內容，可以試試 anime-whisper 和 Sakura-14B。</p>
+      </section>
+
+      <section class="field" id="translate-field" hidden>
+        <label class="check"><input type="checkbox" id="do-translate" checked> 轉完後翻譯成繁體中文</label>
+      </section>
+      <p class="notice" id="add-pending" hidden>模型還在下載，影片會先排隊，裝好自動開始。</p>
+    </div>
+    <footer class="dlg-foot">
+      <div class="upload-progress" id="upload-progress" hidden><i></i></div>
+      <span class="error" id="add-error"></span>
+      <button type="button" class="btn" data-close>取消</button>
+      <button type="submit" class="btn primary" id="add-submit" disabled>加入佇列</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="dialog narrow" id="dlg-translate">
+  <form method="dialog" id="form-translate">
+    <header class="dlg-head">
+      <h2>翻譯成繁體中文</h2>
+      <button type="button" class="icon-btn" data-close title="關閉">×</button>
+    </header>
+    <div class="dlg-body">
+      <div class="stack">
+        <label class="stack">要翻譯的字幕<select id="tr-source"></select></label>
+        <p class="notice" id="tr-notice" style="white-space: pre-line" hidden></p>
+      </div>
+      <div class="stack">
+        <label class="stack">翻譯模型<select id="tr-model"></select></label>
+        <p class="hint" id="tr-missing" hidden><span id="tr-missing-text"></span> <button type="button" class="btn small" id="tr-go-models">去下載</button></p>
+      </div>
+    </div>
+    <footer class="dlg-foot">
+      <span class="error" id="translate-error"></span>
+      <button type="button" class="btn" data-close>取消</button>
+      <button type="submit" class="btn primary" id="tr-submit">加入佇列</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="dialog wide" id="dlg-tracks">
+  <form method="dialog">
+    <header class="dlg-head">
+      <h2>字幕管理</h2>
+      <button type="button" class="icon-btn" data-close title="關閉">×</button>
+    </header>
+    <div class="dlg-body">
+      <div class="track-toolbar">
+        <button type="button" class="btn" id="tracks-transcribe">用其他模型轉字幕</button>
+        <button type="button" class="btn" id="tracks-translate">翻譯成中文</button>
+        <div class="grow"></div>
+        <a class="btn" id="tracks-bilingual" href="#">下載雙語 SRT（目前的原文＋翻譯）</a>
+      </div>
+      <p class="hint">翻譯一定跟著它的原文一起顯示。想比較不同模型的效果，可以輪流按各條字幕的「顯示」切換。</p>
+      <div class="track-table" id="track-table"></div>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="dialog narrow" id="dlg-confirm">
+  <form method="dialog">
+    <header class="dlg-head">
+      <h2 id="confirm-title"></h2>
+      <button type="button" class="icon-btn" data-close title="關閉">×</button>
+    </header>
+    <div class="dlg-body">
+      <p id="confirm-text" class="confirm-text"></p>
+      <ul class="confirm-list" id="confirm-list"></ul>
+    </div>
+    <footer class="dlg-foot">
+      <button type="button" class="btn" data-close id="confirm-cancel">取消</button>
+      <button type="button" class="btn" id="confirm-alt" hidden></button>
+      <button type="button" class="btn primary" id="confirm-ok">確定</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="dialog narrow" id="dlg-help">
+  <form method="dialog">
+    <header class="dlg-head">
+      <h2>快捷鍵</h2>
+      <button type="button" class="icon-btn" data-close title="關閉">×</button>
+    </header>
+    <div class="dlg-body">
+      <p class="hint touch-only">手機、平板：點一下影片叫出控制列，點字幕上的字看解釋，在逐字稿點一句跳過去。遮住翻譯時點一下翻譯才顯示。手機橫放收起右欄後，要叫回來按控制列上的側欄按鈕。沒有鍵盤時下面的快捷鍵用不到。</p>
+      <table class="keys">
+        <tr><td><kbd>空白</kbd></td><td>播放 / 暫停</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>後退 / 前進 5 秒</td></tr>
+        <tr><td><kbd>A</kbd> <kbd>D</kbd></td><td>上一句 / 下一句</td></tr>
+        <tr><td><kbd>R</kbd></td><td>重播這一句</td></tr>
+        <tr><td><kbd>L</kbd></td><td>循環這一句</td></tr>
+        <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>放慢 / 加快</td></tr>
+        <tr><td><kbd>1</kbd> <kbd>2</kbd></td><td>顯示 / 隱藏原文、翻譯</td></tr>
+        <tr><td><kbd>B</kbd></td><td>遮住翻譯</td></tr>
+        <tr><td><kbd>Y</kbd></td><td>假名：全部顯示 → 滑鼠移上去才顯示 → 關閉</td></tr>
+        <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>音量</td></tr>
+        <tr><td><kbd>M</kbd></td><td>靜音</td></tr>
+        <tr><td><kbd>F</kbd></td><td>全螢幕</td></tr>
+        <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>收起／展開左側播放列表、右側逐字稿</td></tr>
+        <tr><td><kbd>Shift</kbd></td><td>滑鼠在字上時立刻顯示解釋</td></tr>
+        <tr><td><kbd>N</kbd> <kbd>X</kbd> <kbd>I</kbd></td><td>解釋卡或單字視窗開著時：標成不會／已會／忽略（再按一次取消）</td></tr>
+        <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>單字視窗開著時：上一個／下一個單字（← → 也可以）</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>關閉解釋卡或單字視窗</td></tr>
+      </table>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="dialog" id="dlg-word">
+  <form method="dialog">
+    <header class="dlg-head">
+      <h2 id="wd-title"></h2>
+      <span class="wd-nav">
+        <button type="button" class="icon-btn small" id="wd-prev" title="上一個單字（↑ 或 ←）">‹</button>
+        <button type="button" class="icon-btn small" id="wd-next" title="下一個單字（↓ 或 →）">›</button>
+      </span>
+      <button type="button" class="icon-btn" data-close title="關閉">×</button>
+    </header>
+    <div class="dlg-body" tabindex="-1">
+      <div id="wd-detail"></div>
+      <div id="wd-ex"></div>
+    </div>
+    <footer class="dlg-foot">
+      <span class="wd-hint" id="wd-hint"></span>
+      <span id="wd-status"></span>
+    </footer>
+  </form>
+</dialog>
+
+<div class="mini" id="mini" hidden>
+  <div class="mini-head" id="mini-head">
+    <span class="mini-title" id="mini-title"></span>
+    <button type="button" class="icon-btn small" id="mini-close" title="關閉">×</button>
+  </div>
+  <div class="mini-video">
+    <video id="mini-video" preload="metadata" playsinline></video>
+    <div class="mini-load" id="mini-load" hidden>載入中…</div>
+  </div>
+  <div class="mini-sub" id="mini-sub"></div>
+  <div class="mini-acts">
+    <button type="button" class="btn small" id="mini-replay" title="重播這一句">重播</button>
+    <button type="button" class="btn small" id="mini-loop" title="一直重複這一句">循環</button>
+    <div class="grow"></div>
+    <button type="button" class="btn small" id="mini-jump" title="回到完整播放器的同一個時間">跳到影片</button>
+  </div>
+  <i class="mini-grip n" data-dir="n"></i><i class="mini-grip s" data-dir="s"></i>
+  <i class="mini-grip w" data-dir="w"></i><i class="mini-grip e" data-dir="e"></i>
+  <i class="mini-grip nw" data-dir="nw"></i><i class="mini-grip ne" data-dir="ne"></i>
+  <i class="mini-grip sw" data-dir="sw"></i><i class="mini-grip se" data-dir="se"></i>
+</div>
+
+<div class="ruby-pop" id="ruby-pop" hidden>
+  <div class="word" id="rp-word"></div>
+  <div class="cands" id="rp-cands"></div>
+  <div class="custom">
+    <input type="text" id="rp-input" placeholder="自己輸入讀音（平假名）">
+    <button class="btn small primary" id="rp-apply">套用</button>
+  </div>
+  <div class="acts">
+    <button class="btn small" id="rp-none">這裡不要標</button>
+    <button class="btn small" id="rp-dict" title="只適合名詞（人名、地名、專有名詞）">以後都這樣讀</button>
+    <div class="grow"></div>
+    <button class="btn small" id="rp-close">關閉</button>
+  </div>
+  <p class="hint" id="rp-hint">「套用」只改這一句；「以後都這樣讀」會加進辭典，所有日文字幕都會套用（只適合名詞）。</p>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="/static/app.js"></script>
+<script src="/static/vocab.js"></script>
+</body>
+</html>

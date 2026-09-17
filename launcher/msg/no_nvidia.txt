@@ -1,0 +1,4 @@
+
+這台電腦沒有偵測到 NVIDIA 顯示卡驅動。
+轉字幕和翻譯需要 NVIDIA RTX 20 系列以後的顯示卡。
+如果你有 NVIDIA 顯示卡，請先到 NVIDIA 官網或 NVIDIA App 安裝最新驅動，再打開 start.bat。

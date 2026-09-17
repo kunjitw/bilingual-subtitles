@@ -1,0 +1,4 @@
+
+開發模式（專案根目錄有 .dev 檔案）找不到 Python。
+請先建立 conda env subtitle，或把環境變數 VS_PYTHON 設成 python.exe 的完整路徑。
+目前找的位置：
