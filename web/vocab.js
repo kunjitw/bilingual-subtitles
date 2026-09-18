@@ -108,7 +108,7 @@
   const V = { vocab: {}, loading: {}, detail: new Map(), status: new Map(), glossDone: null };
   const LOOK = {
     el: null, timer: 0, hideTimer: 0, scanTimer: 0, pinned: false, inPanel: false, ctx: null, anchor: null,
-    warmUntil: 0, pausedByLookup: false, over: false, overSlot: null,
+    warmUntil: 0, pausedByLookup: false, over: false, overSub: false, overSlot: null, holdPause: false,
   };
   const active = () => S.settings.lookupOn !== false;
   const stOf = (key) => V.status.get(key) || 0;
@@ -177,9 +177,12 @@
   function onMove(e) {
     // 手指滑過字幕或捲逐字稿不算停在字上：觸控時只用點一下（onClick）開釘選卡
     if (!active() || e.pointerType === 'touch') return;
-    const line = e.target.closest('.sub-line');
+    LOOK.holdPause = false;                            // 滑鼠又動了，「查字時暫停」恢復
+    const host = e.target.closest('[data-cue]');
     LOOK.over = !!e.target.closest('.sub-line > span, #transcript .a, #wpop');
-    if (line) LOOK.overSlot = line.id === 'line2' ? 2 : 1;
+    // 逐字稿是用來點句子跳過去的：游標落在句子上不算查字（落在某個詞上才算，見 pauseCheck）
+    LOOK.overSub = !!e.target.closest('.sub-line > span, #wpop');
+    if (host?.dataset.cue) LOOK.overSlot = +host.dataset.cue.split(':')[0];
     if (LOOK.pinned) return;
     const el = e.target.closest('.w');
     if (!el && e.shiftKey) scheduleScan(e);
@@ -203,6 +206,7 @@
 
   function onLeave() {
     LOOK.over = false;
+    LOOK.overSub = false;
     clearTimeout(LOOK.timer);
     clearTimeout(LOOK.scanTimer);
     highlight(LOOK.el, false);
@@ -256,6 +260,7 @@
   }
 
   function openCard(c, anchor, pinned) {
+    LOOK.holdPause = false;                            // 真的開始查字了
     LOOK.ctx = c;
     LOOK.anchor = anchor;
     LOOK.pinned = pinned;
@@ -326,9 +331,16 @@
     pop.style.transform = `translate(${Math.round(left - scr.left)}px, ${Math.round(top - scr.top)}px)`;
   }
 
-  // 「這句播完才暫停」：游標在字幕或卡片上時，播到這句結尾前一點點就停，語音不會被切斷
+  // 點逐字稿的句子、跳句是「從這裡播」，不是查字：這一句播完不要停，等滑鼠再動過或真的查字才恢復
+  function onPlayFrom() {
+    LOOK.holdPause = true;
+  }
+
+  // 「這句播完才暫停」：游標在影片的字幕上、停在某個詞上、或卡片開著時，播到這句結尾前一點點就停，
+  // 語音不會被切斷。游標只是落在逐字稿的句子上（例如剛點那一句跳過去）不算查字，不能停
   function pauseCheck() {
-    if (!active() || video.paused || pauseMode() !== 'cueEnd' || !(LOOK.over || !pop.hidden)) return;
+    if (!active() || video.paused || LOOK.holdPause || pauseMode() !== 'cueEnd') return;
+    if (!LOOK.overSub && !LOOK.el && pop.hidden) return;
     const slot = LOOK.ctx?.slot ?? LOOK.overSlot ?? S.primary;
     const cue = S.cues[slot]?.[S.idx[slot]];
     if (cue && video.currentTime >= cue.end - 0.06) {
@@ -1740,7 +1752,7 @@
   }
 
   window.WL = {
-    active, onCuesLoaded, onCueChange, pauseCheck, onKey, onView, onData,
+    active, onCuesLoaded, onCueChange, pauseCheck, onPlayFrom, onKey, onView, onData,
     cardOpen: () => !pop.hidden,
     // 給 tests/ui_check.py 檢查用
     _look: LOOK, _v: V, _vb: VB, _wd: WD, _mini: MINI, _undo: UNDO, _jump: JUMP, hideCard, openWord, openMini, closeMini,

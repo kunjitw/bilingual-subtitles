@@ -1199,8 +1199,9 @@ function lastStarted(cues, t) {
 function updateSubs(force = false) {
   const t = video.currentTime;
   let changed = false;
+  const nav = navCue();
   for (const slot of [1, 2]) {
-    const i = findCue(S.cues[slot], t);
+    const i = cueAt(S.cues[slot], t, nav);
     if (force || i !== S.idx[slot]) {
       S.idx[slot] = i;
       lineEl[slot].innerHTML = i >= 0 ? cueHtml(S.cues[slot][i]) : '';
@@ -1213,9 +1214,12 @@ function updateSubs(force = false) {
   }
   if (changed) fitOutside();
   const P = S.cues[S.primary];
-  const hi = lastStarted(P, t);
+  // 逐字稿高亮跟畫面字幕同一句；沒有剛跳過去的那一句時，照舊用「最後一句開始的」（句子之間的空檔也會留在上一句）
+  const picked = nav ? cueAt(P, t, nav) : -1;
+  const hi = picked >= 0 ? picked : lastStarted(P, t);
   if (force || hi !== S.hi) highlightTranscript(hi);
   if (S.loop && (t >= S.loop.end || t < S.loop.start - 1)) {
+    NAV.seekAt = performance.now();   // 循環跳回句首不算使用者自己拉進度條
     video.currentTime = S.loop.start;
   }
 }
@@ -1236,6 +1240,11 @@ video.addEventListener('pause', () => {
 });
 video.addEventListener('seeking', () => {
   S.seekAt = performance.now();
+  // 不是按上下句、點逐字稿、循環跳回句首造成的（拉進度條、方向鍵快轉、從查字卡跳過去）：忘掉剛才跳到的那一句。
+  // NAV.seekAt 是一次性的：對到就馬上用掉，不然後面幾百毫秒內使用者自己的跳轉會被當成自己人
+  const own = S.seekAt - NAV.seekAt < 300;
+  NAV.seekAt = -1e9;
+  if (!own) navReset();
   // 用進度條或快捷鍵跳轉時，逐字稿要立刻跟上，不管剛才有沒有手動捲過；點逐字稿本身跳轉則保留原位
   if (S.seekAt - S.transcriptClickAt > 500) S.userScrollAt = 0;
 });
@@ -1625,37 +1634,105 @@ function seekBy(sec) {
 function navCues() {
   return S.cues[S.primary].length ? S.cues[S.primary] : S.cues[S.primary === 1 ? 2 : 1];
 }
-function jumpTo(cue) {
+// 跳到某句時停在句首前一點點（比 CUE_LEAD 小，停著時字幕才顯示得出來，播放時開頭的音也不會被切掉）
+const JUMP_LEAD = 0.05;
+
+// 跳到某句要停在哪個時間：句首前一點點，但不能早到前一句還在的時間裡。句子之間常常只隔幾十毫秒，
+// 早到前一句裡面的話，畫面上的字幕會還是前一句，看起來像沒換句（vocab.js 的 leadTime 同一個道理）
+function jumpAt(start) {
+  let at = Math.max(0, start - JUMP_LEAD);
+  for (const slot of [1, 2]) {
+    const cues = S.cues[slot];
+    const i = lastStarted(cues, at);
+    for (const c of [cues[i - 1], cues[i]]) {
+      if (c && c.start < start - 0.001 && c.end > at && c.end <= start + 0.001) at = Math.min(start, c.end + 0.002);
+    }
+  }
+  return at;
+}
+// 剛跳到的是第幾句。影片還停在那個位置時就以這一句為準，不從 currentTime 反推：
+// 瀏覽器跳轉的時間有幾十毫秒誤差，連續快按時也可能還沒跳完，反推會算成同一句，按了像沒反應
+const NAV = { cues: null, i: -1, t: -1e9, at: -1e9, seekAt: -1e9 };
+// 連續按上一句、下一句時，從上次跳到的那一句往前後算，不看播放到哪裡。
+// 不然句子比按鍵間隔短時，影片已經播回下一句，按上一句又跳回同一句，看起來像按了沒反應
+const NAV_CHAIN_MS = 2000;
+
+// 現在算第幾句：跟逐字稿高亮一樣，用「最後一句開始的」；剛跳過去、而且還在那一句裡面，就用剛才跳到的那一句
+// （只看時間差的話，0.05 秒那種很短的句子會在 0.3 秒內播過好幾句，按下一句反而往回跳）
+function navIdx(cues) {
+  const t = video.currentTime;
+  const cue = NAV.cues === cues && NAV.i >= 0 ? cues[NAV.i] : null;
+  if (cue && t >= NAV.t - 0.05 && t < cue.end && t - NAV.t < 0.3) return NAV.i;
+  return lastStarted(cues, t);
+}
+// 畫面上要顯示第幾句：前後句時間重疊、或句子比 CUE_LEAD 還短時，同一個時間點會對到好幾句。
+// 剛跳過去而且還在那一句裡面時，就以它為準；另一條字幕軌挑開始時間跟它最接近的那一句，兩行才會是同一句
+function navCue() {
+  const cue = NAV.i >= 0 && NAV.cues ? NAV.cues[NAV.i] : null;
+  const t = video.currentTime;
+  return cue && t >= cue.start - CUE_LEAD && t < cue.end ? cue : null;
+}
+function cueAt(cues, t, nav = navCue()) {
+  if (nav && cues === NAV.cues) return NAV.i;
+  if (nav) {
+    // 翻譯軌通常跟原文一句對一句（逐行對照翻譯），對得起來就直接用同一個行號，
+    // 不然時間完全一樣的連續短句分不出誰是誰
+    const same = cues[NAV.i];
+    if (same && Math.abs(same.start - nav.start) < 0.01) return NAV.i;
+    let best = -1, diff = Infinity;
+    const near = lastStarted(cues, t);
+    for (let k = Math.max(0, near - 3); k <= Math.min(cues.length - 1, near + 3); k++) {
+      const c = cues[k];
+      if (!c || t < c.start - CUE_LEAD || t >= c.end) continue;
+      const d = Math.abs(c.start - nav.start);
+      if (d < diff) { diff = d; best = k; }
+    }
+    if (best >= 0) return best;
+  }
+  return findCue(cues, t);
+}
+function jumpTo(cues, i) {
+  const cue = cues && cues[i];
   if (!cue) return;
-  video.currentTime = Math.max(0, cue.start - 0.05);
+  const at = jumpAt(cue.start);
+  NAV.seekAt = performance.now();
+  video.currentTime = at;
+  NAV.cues = cues; NAV.i = i; NAV.t = at; NAV.at = NAV.seekAt;
   if (S.loop) setLoop(cue);
   updateSubs(true);
 }
-function prevCue() {
-  const cues = navCues(); const t = video.currentTime;
-  const i = lastStarted(cues, t - 0.05);
-  if (i < 0) return;
-  const inside = t < cues[i].end + 0.3 && t - cues[i].start > 0.6;
-  jumpTo(cues[inside ? i : Math.max(0, i - 1)]);
+// 使用者自己拉進度條、用方向鍵快轉、從查字卡跳過去：不算連續按上下句，下一次要從新位置算
+function navReset() {
+  NAV.cues = null; NAV.i = -1; NAV.t = -1e9; NAV.at = -1e9;
 }
-function nextCue() {
+// 連續按上一句、下一句、重播、循環時都以剛跳到的那一句為準
+function chainIdx(cues) {
+  if (NAV.cues === cues && NAV.i >= 0 && performance.now() - NAV.at < NAV_CHAIN_MS) return NAV.i;
+  return navIdx(cues);
+}
+// 上一句、下一句：一定從現在這一句往前或往後一句，按一次就換一句，不會停在原地
+function stepCue(dir) {
   const cues = navCues();
-  const i = lastStarted(cues, video.currentTime + 0.05);
-  jumpTo(cues[i + 1]);
+  if (!cues.length) return;
+  const to = chainIdx(cues) + dir;
+  if (to >= cues.length || to < -1) return;   // 已經在最後一句，或還在第一句之前
+  jumpTo(cues, Math.max(0, to));              // 在第一句裡面按上一句：回到這一句的開頭
 }
+function prevCue() { stepCue(-1); }
+function nextCue() { stepCue(1); }
 function replayCue() {
   const cues = navCues();
-  const i = lastStarted(cues, video.currentTime);
-  if (i >= 0) { jumpTo(cues[i]); if (video.paused) video.play().catch(() => {}); }
+  const i = chainIdx(cues);
+  if (i >= 0) { jumpTo(cues, i); if (video.paused) video.play().catch(() => {}); }
 }
 function setLoop(cue) {
-  S.loop = cue ? { start: Math.max(0, cue.start - 0.05), end: cue.end } : null;
+  S.loop = cue ? { start: jumpAt(cue.start), end: cue.end } : null;
   $('#c-loop').classList.toggle('on', !!S.loop);
 }
 function toggleLoop() {
   if (S.loop) { setLoop(null); return; }
   const cues = navCues();
-  const i = lastStarted(cues, video.currentTime);
+  const i = chainIdx(cues);
   if (i >= 0) setLoop(cues[i]); else toast('這個位置沒有字幕可以循環');
 }
 $('#c-prev').addEventListener('click', prevCue);
@@ -1834,9 +1911,13 @@ $('#transcript').addEventListener('click', (e) => {
   if (!li) return;
   // 遮住翻譯時手指點翻譯：只把這句翻譯亮出來，再點一次遮回去，不跳句（滑鼠照舊移上去顯示）
   if (S.settings.blur2 && lastPointer !== 'mouse' && e.target.closest('.b')) { li.classList.toggle('peek'); return; }
-  const cue = S.cues[S.primary][+li.dataset.i];
+  const cues = S.cues[S.primary];
+  const i = +li.dataset.i;
+  if (!cues[i]) return;
   S.transcriptClickAt = performance.now();
-  if (cue) { jumpTo(cue); if (S.loop) setLoop(cue); }
+  jumpTo(cues, i);
+  // 點句子是「從這裡播」，不是查字：這一句播完不要被「查字時暫停」停下來
+  window.WL?.onPlayFrom();
 });
 for (const ev of ['wheel', 'touchmove', 'keydown']) {
   $('#transcript').addEventListener(ev, () => { S.userScrollAt = Date.now(); }, { passive: true });
