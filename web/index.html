@@ -92,6 +92,11 @@
 <main class="layout">
   <aside class="library">
     <div class="pane-head lib-head">
+      <!-- 有外掛標了作品、季、集的影片才出現：切換一般清單和依作品分的清單 -->
+      <div class="lib-view" id="lib-view" hidden>
+        <button type="button" data-v="list" class="on">全部影片</button>
+        <button type="button" data-v="series">依作品</button>
+      </div>
       <input id="search" type="search" placeholder="搜尋播放列表" autocomplete="off">
       <div class="lang-filter" id="lang-filter">
         <button data-v="all" class="on">全部<span></span></button>
@@ -290,6 +295,12 @@
         </label>
       </div>
       <p class="hint">Chrome 較新版本會鎖住 cookies，若失敗請改用 Firefox，或用擴充套件匯出 cookies.txt。</p>
+    </section>
+
+    <!-- 本機外掛要填的設定（例如登入用的 cookie）。只寫不讀，這裡只顯示有沒有設定 -->
+    <section class="card" id="plugins-card" hidden>
+      <h2>外掛</h2>
+      <div class="plugin-list" id="plugin-list"></div>
     </section>
 
     <section class="card">
@@ -512,7 +523,17 @@
           <input type="url" id="url" placeholder="https://www.youtube.com/watch?v=…">
           <p class="notice url-dup" id="url-dup" hidden></p>
           <p class="notice" id="url-plugin" hidden></p>
-          <p class="hint">貼上影片網址，下載好就會自動開始轉字幕。不只 YouTube，Bilibili、X、Vimeo 這些 yt-dlp 支援的網站，貼網址一樣可以。</p>
+          <!-- 外掛把網址展開成整部作品的清單時才出現：勾要加入的集數（app.js 的「外掛的集數清單」） -->
+          <div class="ep-picker" id="ep-picker" hidden>
+            <div class="ep-top">
+              <b class="ep-work" id="ep-work"></b>
+              <span class="ep-total" id="ep-total"></span>
+            </div>
+            <p class="hint" id="ep-status"></p>
+            <p class="ep-legend" id="ep-legend" hidden><span><i class="ep-sample have"></i>已在播放列表</span><span><i class="ep-sample cur"></i>你貼的這集</span></p>
+            <div class="ep-groups" id="ep-groups"></div>
+          </div>
+          <p class="hint" id="url-hint">貼上影片網址，下載好就會自動開始轉字幕。不只 YouTube，Bilibili、X、Vimeo 這些 yt-dlp 支援的網站，貼網址一樣可以。</p>
         </div>
         <div class="src-pane" data-pane="upload" hidden>
           <label class="drop" id="drop">

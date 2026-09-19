@@ -77,6 +77,9 @@ def init():
     cols = {r["name"] for r in _conn.execute("PRAGMA table_info(media)").fetchall()}
     if "title_zh" not in cols:
         _conn.execute("ALTER TABLE media ADD COLUMN title_zh TEXT")
+    if "series_info" not in cols:
+        # 依作品分的播放列表用：作品、季、集（JSON），外掛標的，見 app/series.py
+        _conn.execute("ALTER TABLE media ADD COLUMN series_info TEXT")
     tcols = {r["name"] for r in _conn.execute("PRAGMA table_info(tracks)").fetchall()}
     if "ruby_ver" not in tcols:
         _conn.execute("ALTER TABLE tracks ADD COLUMN ruby_ver TEXT")

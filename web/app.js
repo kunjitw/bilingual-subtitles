@@ -240,6 +240,7 @@ async function poll() {
     if (sig !== S.sig) {
       S.sig = sig;
       S.media = st.media;
+      S.series = st.series || [];
       S.jobs = st.jobs;
       onData();
     } else {
@@ -375,7 +376,101 @@ function visibleMedia() {
   const q = $('#search').value.trim().toLowerCase();
   const lang = S.settings.libLang || 'all';
   return S.media.filter((m) => (lang === 'all' || m.language === lang)
-    && (!q || m.title.toLowerCase().includes(q) || (m.title_zh || '').toLowerCase().includes(q)));
+    && (!q || m.title.toLowerCase().includes(q) || (m.title_zh || '').toLowerCase().includes(q)
+      || (m.series?.series || '').toLowerCase().includes(q)));
+}
+
+// 播放列表的樣子：list（全部影片）或 series（依作品，作品 → 季 → 集，後端 app/series.py 排好）
+const seriesView = () => S.settings.libView === 'series' && (S.series || []).length > 0;
+
+// 依作品的樹，只留目前搜尋、語言篩選看得到的集數
+function visibleSeries() {
+  const ok = new Set(visibleMedia().map((m) => m.id));
+  return (S.series || []).map((w) => ({
+    ...w,
+    seasons: w.seasons.map((s) => ({ ...s, items: s.items.filter((id) => ok.has(id)) })).filter((s) => s.items.length),
+  })).filter((w) => w.seasons.length);
+}
+
+// 播完自動播下一部的順序：依作品的樣子照集數，否則照一般清單
+function playOrder() {
+  if (seriesView()) {
+    const ids = visibleSeries().flatMap((w) => w.seasons.flatMap((s) => s.items));
+    if (ids.includes(S.current)) return ids.map(mediaById).filter(Boolean);
+  }
+  return visibleMedia();
+}
+
+function renderLibView() {
+  const has = (S.series || []).length > 0;
+  $('#lib-view').hidden = !has;
+  const v = seriesView() ? 'series' : 'list';
+  for (const b of $$('#lib-view button')) b.classList.toggle('on', b.dataset.v === v);
+}
+$('#lib-view').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-v]');
+  if (!b) return;
+  S.settings.libView = b.dataset.v;
+  saveSettings();
+  renderLibrary();
+  $('#media-list').scrollTop = 0;
+});
+
+// 展開、收起的狀態記在這台裝置（key 是作品名，或作品名加季）
+const seriesOpen = store.get('seriesOpen', {});
+function isOpen(key, fallback) { return key in seriesOpen ? !!seriesOpen[key] : fallback; }
+
+const hasSubs = (m) => m.tracks.some((t) => t.kind === 'asr');
+function countText(ids) {
+  const done = ids.filter((id) => { const m = mediaById(id); return m && hasSubs(m); }).length;
+  return `${ids.length} 集，字幕 ${done}`;
+}
+
+function renderSeriesList(ul) {
+  const works = visibleSeries();
+  if (!works.length) {
+    ul.innerHTML = `<li class="lib-empty"><span>找不到符合的影片</span></li>`;
+    return;
+  }
+  const searching = !!$('#search').value.trim();
+  ul.innerHTML = works.map((w) => {
+    const all = w.seasons.flatMap((s) => s.items);
+    const wOpen = searching || isOpen(`w:${w.key}`, works.length === 1 || all.includes(S.current));
+    const seasons = w.seasons.map((s) => {
+      const sOpen = searching || isOpen(`s:${s.key}`, w.seasons.length === 1 || s.items.includes(S.current));
+      const eps = s.items.map((id) => {
+        const m = mediaById(id);
+        if (!m) return '';
+        const no = m.series?.episode_label || '';
+        const dur = m.duration ? `<span class="sr-dur">${fmtTime(m.duration)}</span>` : '';
+        return `<li class="sr-ep${id === S.current ? ' on' : ''}" data-id="${id}" title="${esc(m.title)}">
+          <span class="sr-no">${esc(no)}</span><span class="sr-meta item-meta">${mediaMetaHtml(m)}</span>${dur}</li>`;
+      }).join('');
+      return `<li class="sr-season${sOpen ? ' open' : ''}">
+        <button type="button" class="sr-head" data-toggle="s:${esc(s.key)}" aria-expanded="${sOpen}">
+          <span class="sr-caret"></span><span class="sr-title">${esc(s.title)}</span><span class="sr-count">${countText(s.items)}</span></button>
+        ${sOpen ? `<ul class="sr-eps">${eps}</ul>` : ''}</li>`;
+    }).join('');
+    return `<li class="sr-work${wOpen ? ' open' : ''}">
+      <button type="button" class="sr-head" data-toggle="w:${esc(w.key)}" aria-expanded="${wOpen}">
+        <span class="sr-caret"></span><span class="sr-title">${esc(w.title)}</span><span class="sr-count">${countText(all)}</span></button>
+      ${wOpen ? `<ul class="sr-seasons">${seasons}</ul>` : ''}</li>`;
+  }).join('');
+}
+
+// 一部影片在播放列表上的狀態：處理中、排隊中、失敗、有哪些字幕
+function mediaMetaHtml(m) {
+  const job = activeJobOf(m.id);
+  if (job && job.status === 'running') {
+    const pct = Math.round((job.progress || 0) * 100);
+    return `<span class="st run">${esc([JOB_LABEL[job.type], jobStage(job)].filter(Boolean).join(' · '))} ${pct}%</span><div class="minibar"><i style="width:${pct}%"></i></div>`;
+  }
+  if (job) return `<span class="st">${job.waiting ? '等模型' : '排隊中'}（${esc(JOB_LABEL[job.type])}）</span>`;
+  const failed = jobsOf(m.id).filter((j) => j.status === 'failed').sort((a, b) => b.finished_at - a.finished_at)[0];
+  const langs = [...new Set(m.tracks.map((t) => t.lang))];
+  if (failed && !m.tracks.length) return `<span class="st bad">${esc(JOB_LABEL[failed.type])}失敗</span>`;
+  if (langs.length) return langs.map((l) => `<span class="chip">${esc(LANG_SHORT[l] || l)}</span>`).join('');
+  return `<span>還沒有字幕</span>`;
 }
 
 function renderLangFilter() {
@@ -397,31 +492,21 @@ $('#lang-filter').addEventListener('click', (e) => {
 
 function renderLibrary() {
   renderLangFilter();
+  renderLibView();
   const ul = $('#media-list');
+  ul.classList.toggle('series', seriesView());
   if (!S.media.length) {
     ul.innerHTML = `<li class="lib-empty"><span>播放列表是空的</span><button class="btn" data-act="add">新增影片</button></li>`;
     return;
   }
+  if (seriesView()) { renderSeriesList(ul); return; }
   const list = visibleMedia();
   if (!list.length) {
     ul.innerHTML = `<li class="lib-empty"><span>找不到符合的影片</span></li>`;
     return;
   }
   ul.innerHTML = list.map((m) => {
-    const job = activeJobOf(m.id);
-    let meta = '';
-    if (job && job.status === 'running') {
-      const pct = Math.round((job.progress || 0) * 100);
-      meta = `<span class="st run">${esc([JOB_LABEL[job.type], jobStage(job)].filter(Boolean).join(' · '))} ${pct}%</span><div class="minibar"><i style="width:${pct}%"></i></div>`;
-    } else if (job) {
-      meta = `<span class="st">${job.waiting ? '等模型' : '排隊中'}（${esc(JOB_LABEL[job.type])}）</span>`;
-    } else {
-      const failed = jobsOf(m.id).filter((j) => j.status === 'failed').sort((a, b) => b.finished_at - a.finished_at)[0];
-      const langs = [...new Set(m.tracks.map((t) => t.lang))];
-      if (failed && !m.tracks.length) meta = `<span class="st bad">${esc(JOB_LABEL[failed.type])}失敗</span>`;
-      else if (langs.length) meta = langs.map((l) => `<span class="chip">${esc(LANG_SHORT[l] || l)}</span>`).join('');
-      else meta = `<span>還沒有字幕</span>`;
-    }
+    const meta = mediaMetaHtml(m);
     const thumb = m.has_thumb ? `<img src="/media/${m.id}/thumb.jpg" alt="" loading="lazy">` : '';
     const dur = m.duration ? `<span class="dur">${fmtTime(m.duration)}</span>` : '';
     const t = titleParts(m);
@@ -436,7 +521,14 @@ function renderLibrary() {
 
 $('#media-list').addEventListener('click', (e) => {
   if (e.target.closest('[data-act="add"]')) { openAddDialog(); return; }
-  const li = e.target.closest('.item');
+  const head = e.target.closest('[data-toggle]');
+  if (head) {
+    seriesOpen[head.dataset.toggle] = head.getAttribute('aria-expanded') !== 'true';
+    store.set('seriesOpen', seriesOpen);
+    renderLibrary();
+    return;
+  }
+  const li = e.target.closest('.item, .sr-ep');
   if (li) openMedia(li.dataset.id);
 });
 $('#search').addEventListener('input', renderLibrary);
@@ -803,7 +895,7 @@ async function refreshSoon() {
     S.gpu = st.gpu; renderGpu();
     onSetupSummary(st);
     S.sig = JSON.stringify([st.media, st.jobs, !!(st.gpu && st.gpu.queue_paused)]);
-    S.media = st.media; S.jobs = st.jobs;
+    S.media = st.media; S.series = st.series || []; S.jobs = st.jobs;
     onData();
   } catch { /* 下一次輪詢會再試 */ }
 }
@@ -978,7 +1070,7 @@ window.addEventListener('beforeunload', () => savePosition(true));
 video.addEventListener('ended', () => {
   updatePlayButton();
   if (!S.settings.autoNext && S.settings.repeat !== 'all') return;
-  const list = visibleMedia();
+  const list = playOrder();
   const i = list.findIndex((m) => m.id === S.current);
   const next = list[i + 1] || (S.settings.repeat === 'all' ? list[0] : null);
   if (next && next.id !== S.current) {
@@ -2378,6 +2470,7 @@ function openAddDialog(mode = 'add', force = false) {
   $('#url').value = '';
   A.plugin = null;
   $('#url-plugin').hidden = true;
+  resetEpList();
   $('#do-translate').checked = S.settings.addTranslate !== false;
   $('#do-sensitive').checked = false;
   $('#adv-engine').dataset.lang = '';
@@ -2427,6 +2520,7 @@ function checkUrlPlugin() {
     if (typeof A.plugin.options?.translate === 'boolean') $('#do-translate').checked = S.settings.addTranslate !== false;
     A.plugin = null;
     $('#url-plugin').hidden = true;
+    resetEpList();
     updateAddForm();
   }
   if (A.mode !== 'add' || A.src !== 'url' || !/^https?:\/\/\S+/.test(raw)) return;
@@ -2451,11 +2545,102 @@ function applyUrlPlugin(res) {
     $('#do-translate').checked = o.translate;
     parts.push(o.translate ? '翻譯' : '不翻譯');
   }
-  $('#url-plugin').textContent = `這個網址由本機外掛「${res.plugin}」下載${parts.length ? `，固定${parts.join('、')}` : ''}。`;
+  $('#url-plugin').textContent = `這個網址由外掛「${res.plugin}」下載${parts.length ? `，固定${parts.join('、')}` : ''}。`;
   $('#url-plugin').hidden = false;
   $('#add-error').textContent = '';
+  if (res.expand && !A.ep) loadEpList($('#url').value.trim());
   updateAddForm();
 }
+
+/* ----- 外掛的集數清單：貼一集的網址，列出整部作品讓使用者勾（後端 /api/url-plugin/list、/api/media/batch） ----- */
+
+// A.ep：null（沒有清單）或 { url, loading, error, data }；data.groups[].items[].checked 是目前的勾選
+let epSeq = 0;
+function resetEpList() {
+  epSeq++;
+  A.ep = null;
+  $('#ep-picker').hidden = true;
+  $('#ep-groups').innerHTML = '';
+  $('#url-hint').hidden = false;
+}
+async function loadEpList(url) {
+  const seq = ++epSeq;
+  A.ep = { url, loading: true, error: '', data: null };
+  renderEpList();
+  updateAddForm();
+  try {
+    const data = await api('GET', `/api/url-plugin/list?url=${encodeURIComponent(url)}`);
+    if (seq !== epSeq) return;
+    for (const g of data.groups) {
+      for (const it of g.items) it.checked = g.checked && !it.in_library;
+    }
+    A.ep = { url, loading: false, error: '', data };
+  } catch (err) {
+    if (seq !== epSeq) return;
+    A.ep = { url, loading: false, error: err.message, data: null };
+  }
+  renderEpList();
+  updateAddForm();
+}
+const epChecked = () => (A.ep?.data ? A.ep.data.groups.flatMap((g) => g.items.filter((it) => it.checked)) : []);
+function epCountText(n) { return n ? `已選 ${n} 集` : '還沒選'; }
+
+function renderEpList() {
+  const ep = A.ep;
+  $('#ep-picker').hidden = !ep;
+  $('#url-hint').hidden = !!ep;
+  if (!ep) return;
+  const data = ep.data;
+  $('#ep-work').textContent = data ? (data.title || '這部作品') : '這部作品';
+  $('#ep-legend').hidden = !data;
+  $('#ep-status').textContent = ep.loading ? '正在讀取這部作品有哪些集數，第一次要幾秒…'
+    : ep.error ? `讀不到集數清單（${ep.error}）。按「加入佇列」只會加入貼上的這一集。`
+      : '勾要加入的集數，點組名可以整組勾或取消。';
+  $('#ep-status').classList.toggle('error-text', !!ep.error);
+  if (!data) { $('#ep-groups').innerHTML = ''; updateEpTotals(); return; }
+  $('#ep-groups').innerHTML = data.groups.map((g) => {
+    const lang = g.language && S.meta.languages[g.language] ? `，轉${S.meta.languages[g.language]}字幕` : '';
+    return `<section class="ep-group${g.checked ? '' : ' off-default'}" data-g="${esc(g.key)}">
+      <label class="ep-ghead"><input type="checkbox" data-gall="${esc(g.key)}">
+        <span class="ep-gtitle">${esc(g.title)}</span><span class="ep-gcount" data-gcount="${esc(g.key)}"></span></label>
+      ${g.note || !g.checked ? `<p class="ep-note">${esc(g.note || '預設不勾')}${esc(lang)}</p>` : ''}
+      <div class="ep-grid">${g.items.map((it, i) => `<label class="ep${it.in_library ? ' have' : ''}${it.current ? ' cur' : ''}"
+          title="${esc(it.title || it.label)}${it.in_library ? '（已在播放列表）' : ''}${it.current ? '（你貼的這集）' : ''}">
+          <input type="checkbox" data-g="${esc(g.key)}" data-i="${i}"${it.checked ? ' checked' : ''}><span>${esc(it.label)}</span></label>`).join('')}</div>
+    </section>`;
+  }).join('');
+  updateEpTotals();
+}
+
+function updateEpTotals() {
+  const data = A.ep?.data;
+  if (!data) { $('#ep-total').textContent = ''; return; }
+  for (const g of data.groups) {
+    const n = g.items.filter((it) => it.checked).length;
+    const all = $(`[data-gall="${CSS.escape(g.key)}"]`, $('#ep-groups'));
+    if (all) { all.checked = n > 0 && n === g.items.length; all.indeterminate = n > 0 && n < g.items.length; }
+    const count = $(`[data-gcount="${CSS.escape(g.key)}"]`, $('#ep-groups'));
+    if (count) count.textContent = `${n} / ${g.items.length} 集`;
+  }
+  $('#ep-total').textContent = epCountText(epChecked().length);
+}
+
+$('#ep-groups').addEventListener('change', (e) => {
+  const data = A.ep?.data;
+  const box = e.target;
+  if (!data || box.type !== 'checkbox') return;
+  if (box.dataset.gall) {
+    const g = data.groups.find((x) => x.key === box.dataset.gall);
+    if (!g) return;
+    for (const it of g.items) it.checked = box.checked;
+    for (const el of $$(`input[data-g="${CSS.escape(g.key)}"]`, $('#ep-groups'))) el.checked = box.checked;
+  } else if (box.dataset.g) {
+    const it = data.groups.find((x) => x.key === box.dataset.g)?.items[Number(box.dataset.i)];
+    if (it) it.checked = box.checked;
+  }
+  updateEpTotals();
+  updateAddForm();
+});
 
 // 同一部影片的網址有很多寫法（youtu.be、shorts、後面帶時間或播放清單），YouTube 用影片 ID 比對，其他網站比對網址本身
 function urlKey(raw) {
@@ -2475,7 +2660,8 @@ function sameUrlMedia(raw) {
 }
 function updateUrlDup() {
   const el = $('#url-dup');
-  const dup = A.mode === 'add' && A.src === 'url' ? sameUrlMedia($('#url').value)[0] : null;
+  // 有集數清單時，已經在播放列表的集數標在清單上
+  const dup = A.mode === 'add' && A.src === 'url' && !A.ep?.data ? sameUrlMedia($('#url').value)[0] : null;
   el.hidden = !dup;
   if (!dup) { el.innerHTML = ''; return; }
   const title = titleParts(dup).main;
@@ -2529,12 +2715,17 @@ function updateAddForm() {
   }
 
   let sourceOk = true;
+  const list = A.mode === 'add' && A.src === 'url' && A.ep ? A.ep : null;
   if (A.mode === 'add') {
     if (A.src === 'upload') sourceOk = !!A.file;
     if (A.src === 'url') sourceOk = /^https?:\/\/\S+/.test($('#url').value.trim());
   }
+  // 有集數清單：讀取中不能送，讀到了要至少勾一集（讀不到就照一般網址只加這一集）
+  const picked = list?.data ? epChecked().length : 0;
+  if (list && (list.loading || (list.data && !picked))) sourceOk = false;
   $('#add-submit').disabled = A.busy || !sourceOk;
-  $('#add-submit').textContent = A.mode === 'transcribe' ? '開始轉字幕' : '加入佇列';
+  $('#add-submit').textContent = A.mode === 'transcribe' ? '開始轉字幕'
+    : list?.loading ? '讀取集數中…' : list?.data ? `加入佇列（${picked} 集）` : '加入佇列';
   updateUrlDup();
   updateAddPending();
 }
@@ -2580,12 +2771,15 @@ $('#form-add').addEventListener('submit', async (e) => {
       if (res?.plugin) applyUrlPlugin(res);
     } catch { /* 照一般網址處理 */ }
   }
+  if (A.mode === 'add' && A.src === 'url' && A.ep?.loading) return;   // 集數清單讀好、勾完再送
   if (!A.lang) {
     $('#lang-seg').classList.add('need');
     $('#add-error').textContent = '請選擇影片語言';
     return;
   }
-  const dup = A.mode === 'add' && A.src === 'url' ? sameUrlMedia($('#url').value) : [];
+  const batch = A.mode === 'add' && A.src === 'url' && A.ep?.data ? epChecked().map((it) => it.url) : null;
+  if (batch && !batch.length) return;
+  const dup = A.mode === 'add' && A.src === 'url' && !batch ? sameUrlMedia($('#url').value) : [];
   if (dup.length) {
     const choice = await askConfirm({
       title: '播放列表裡已經有這部影片',
@@ -2607,6 +2801,13 @@ $('#form-add').addEventListener('submit', async (e) => {
   A.busy = true; updateAddForm();
   $('#add-error').textContent = '';
   try {
+    if (batch) {
+      const res = await api('POST', '/api/media/batch', { ...opts, url: A.ep.url, items: batch });
+      dlgAdd.close();
+      toast(`已加入 ${res.count} 集，開始排隊下載和轉字幕`);
+      refreshSoon();
+      return;
+    }
     if (A.mode === 'transcribe') {
       await api('POST', `/api/media/${S.current}/transcribe`, opts);
     } else {
@@ -3052,6 +3253,7 @@ function showView(name) {
   if (SET.open) {
     if (!video.paused) video.pause();
     refreshSettings();
+    refreshPluginSettings();
     refreshRedoHint();
     refreshHealthHint();
   }
@@ -3155,6 +3357,110 @@ async function saveValue(key, value) {
 $('#set-cookies-browser').addEventListener('change', (e) => saveValue('cookies_browser', e.target.value));
 $('#set-cookies-file').addEventListener('change', (e) => saveValue('cookies_file', e.target.value.trim()));
 $('#set-group').addEventListener('change', (e) => saveValue('group_by_model', e.target.checked));
+
+/* ----- 外掛設定（後端 /api/plugins/...）：只寫不讀，畫面上只有有沒有設定、什麼時候、哪個瀏覽器 ----- */
+
+function fmtDateTime(sec) {
+  const d = new Date(sec * 1000);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// UA 的短雜湊，跟後端 plugins.ua_fingerprint 一樣（FNV-1a 32 位元，UTF-8）
+function uaFingerprint(ua) {
+  let h = 0x811c9dc5;
+  for (const b of new TextEncoder().encode(ua)) h = Math.imul(h ^ b, 0x01000193) >>> 0;
+  return h.toString(16).padStart(8, '0');
+}
+
+// 外掛要瀏覽器 UA 的（cookie 跟 UA 綁在一起）：網頁打開時，存的 UA 跟這個瀏覽器的不一樣才送，不顯示任何東西。
+// 後端只接受同一種瀏覽器、同一種系統的新版本（在手機上打開不會蓋掉電腦的）
+async function syncPluginUserAgent() {
+  let res;
+  try { res = await api('GET', '/api/plugins/settings'); } catch { return; }
+  const fp = uaFingerprint(navigator.userAgent);
+  for (const p of res.plugins || []) {
+    if (!p.auto_user_agent || p.ua_fp === fp) continue;
+    try { await api('PUT', `/api/plugins/${encodeURIComponent(p.id)}/user-agent`, { user_agent: navigator.userAgent }); } catch { /* 下次打開再試 */ }
+  }
+}
+
+async function refreshPluginSettings() {
+  let res;
+  try { res = await api('GET', '/api/plugins/settings'); } catch { return; }
+  renderPluginSettings(res.plugins || []);
+}
+
+function pluginBlockHtml(p) {
+  const anySet = p.fields.some((f) => f.set);
+  const when = p.fields.map((f) => f.saved_at).filter(Boolean).sort().pop();
+  const status = anySet
+    ? `已設定${when ? `，${fmtDateTime(when)}` : ''}${p.browser ? `，${esc(p.browser)}` : ''}`
+    : '還沒設定';
+  const fields = p.fields.map((f) => {
+    const id = `pf-${p.id}-${f.key}`;
+    const input = f.type === 'textarea'
+      ? `<textarea id="${id}" data-field="${esc(f.key)}" rows="3" autocomplete="off" spellcheck="false" placeholder="${esc(f.set ? '要換新的再貼一次' : f.placeholder)}"></textarea>`
+      : `<input type="text" id="${id}" data-field="${esc(f.key)}" autocomplete="off" spellcheck="false" placeholder="${esc(f.set ? '要換新的再貼一次' : f.placeholder)}">`;
+    return `<div class="plugin-field">
+      ${f.steps.length ? `<div class="plugin-steps-title">怎麼取得 ${esc(f.label)}</div><ol class="plugin-steps">${f.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+      <label for="${id}" class="plugin-label">${esc(f.label)}</label>
+      ${input}
+      ${f.help ? `<p class="hint">${esc(f.help)}</p>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="plugin-block" data-plugin="${esc(p.id)}">
+    <h3>${esc(p.title)}</h3>
+    ${p.intro ? `<p class="hint">${esc(p.intro)}</p>` : ''}
+    <p class="plugin-status${anySet ? ' ok' : ''}"><i></i>${status}</p>
+    ${p.problem ? `<p class="plugin-problem">${esc(p.problem)}</p>` : ''}
+    ${fields}
+    <div class="row-actions">
+      <button type="button" class="btn primary" data-plugin-save>儲存</button>
+      ${anySet ? '<button type="button" class="btn" data-plugin-clear>清除</button>' : ''}
+    </div>
+  </div>`;
+}
+
+function renderPluginSettings(list) {
+  $('#plugins-card').hidden = !list.length;
+  // 正在輸入的內容不要被重畫洗掉
+  const typing = $$('#plugin-list [data-field]').some((el) => el.value);
+  if (typing && $('#plugin-list').children.length === list.length) return;
+  $('#plugin-list').innerHTML = list.map(pluginBlockHtml).join('');
+}
+
+$('#plugin-list').addEventListener('click', async (e) => {
+  const block = e.target.closest('[data-plugin]');
+  if (!block) return;
+  const pid = block.dataset.plugin;
+  const save = e.target.closest('[data-plugin-save]');
+  const clear = e.target.closest('[data-plugin-clear]');
+  if (!save && !clear) return;
+  const btn = save || clear;
+  try {
+    let res;
+    if (save) {
+      const values = {};
+      for (const el of $$('[data-field]', block)) if (el.value.trim()) values[el.dataset.field] = el.value;
+      if (!Object.keys(values).length) { toast('請先貼上內容', true); return; }
+      btn.disabled = true;
+      res = await api('PUT', `/api/plugins/${encodeURIComponent(pid)}/settings`, { values, user_agent: navigator.userAgent });
+      for (const el of $$('[data-field]', block)) el.value = '';
+      toast('已儲存');
+    } else {
+      const ok = await askConfirm({ title: '清除設定', text: '要清除存著的內容嗎？之後要用時再貼一次。', ok: '清除', warn: true });
+      if (!ok) return;
+      btn.disabled = true;
+      res = await api('DELETE', `/api/plugins/${encodeURIComponent(pid)}/settings`);
+      toast('已清除');
+    }
+    block.outerHTML = pluginBlockHtml(res.plugin);
+  } catch (err) {
+    toast(err.message, true);
+    btn.disabled = false;
+  }
+});
 
 /* ----- 手機、平板（區網開關，後端見 app/server.py 的 reject_lan_when_off、_network_view） ----- */
 
@@ -3759,4 +4065,5 @@ window.addEventListener('keydown', (e) => {
     if (SU.api) await refreshSetup();
   } catch { /* 輪詢會再試 */ }
   poll();
+  syncPluginUserAgent();
 })();

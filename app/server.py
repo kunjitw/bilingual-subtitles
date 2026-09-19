@@ -19,6 +19,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import config, db, gpu, health, instance, jobs, media, models, netinfo, plugins, safepath, syscheck
 from . import cues as cue_mod
+from . import series as series_mod
 from . import settings as settings_mod
 from . import vocab, vocab_api
 from . import dict_build, setup   # 第一次打開的自動安裝、建查字字典
@@ -617,7 +618,8 @@ def state():
         t["health"] = {k: v for k, v in h.items() if k != "bad"} if h else None
         tracks_by_media.setdefault(t["media_id"], []).append(t)
     items = []
-    for m in db.list_media():
+    all_media = db.list_media()
+    for m in all_media:
         items.append({
             "id": m["id"], "title": m["title"], "title_zh": m.get("title_zh"),
             "source": m["source"], "path": m["path"], "url": m["url"],
@@ -626,7 +628,11 @@ def state():
             "playable": bool(m["playable"]), "has_proxy": bool(m["proxy_path"] and Path(m["proxy_path"]).exists()),
             "has_thumb": bool(m["has_thumb"]), "created_at": m["created_at"],
             "tracks": tracks_by_media.get(m["id"], []),
+            "series": series_mod.loads(m.get("series_info")),
         })
+    # 依作品分的播放列表（作品 → 季 → 集）。有字幕：有語音辨識產生的字幕
+    subtitled = {mid for mid, ts in tracks_by_media.items() if any(t["kind"] == "asr" for t in ts)}
+    series_tree = series_mod.tree(all_media, subtitled)
     info = gpu.query()
     job_list = db.list_jobs()
     # 暫停、中斷後接著做的任務這次開始時的進度（jobs.resume_points），網頁估剩餘時間用
@@ -642,6 +648,7 @@ def state():
         setup_summary = None
     return {
         "media": items,
+        "series": series_tree,
         "jobs": job_list,
         "setup": setup_summary,
         # loaded：顯卡上載入著的模型（常駐的語音模型、llama-server），顯卡沒事做 idle_release_s 秒後自動釋放
@@ -783,11 +790,106 @@ def precheck_media(opt: TranscribeOptions):
 
 @app.get("/api/url-plugin")
 def url_plugin(url: str = ""):
-    """這個網址是不是由本機外掛處理（app/plugins.py）。網頁用來自動選好外掛固定的選項（例如語言、不翻譯）。"""
+    """這個網址是不是由本機外掛處理（app/plugins.py）。網頁用來自動選好外掛固定的選項（例如語言、不翻譯）；
+    expand 為 True 時網頁再用 /api/url-plugin/list 列出整部作品讓使用者勾。"""
     plugin = plugins.find(url)
     if not plugin:
-        return {"plugin": None, "options": {}}
-    return {"plugin": plugin.name, "options": plugin.options}
+        return {"plugin": None, "options": {}, "expand": False}
+    return {"plugin": plugin.name, "options": plugin.options, "expand": plugin.can_expand}
+
+
+def _plugin_listing(url: str):
+    """(外掛, 網址, 清單)；網址不是能展開的外掛網址回 400，外掛讀不到清單照外掛的狀態碼。"""
+    try:
+        url = safepath.check_download_url(url)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    plugin = plugins.find(url)
+    if not plugin or not plugin.can_expand:
+        raise HTTPException(400, "這個網址不能列出集數")
+    try:
+        return plugin, url, plugins.expand(plugin, url)
+    except plugins.PluginError as e:
+        raise HTTPException(e.status, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/url-plugin/list")
+def url_plugin_list(url: str = ""):
+    """外掛把網址展開成的清單（例如整部作品的每一季、每一集），每一集標出是不是已經在播放列表裡。"""
+    plugin, url, listing = _plugin_listing(url)
+    have = {}
+    for m in db.list_media():
+        if m["url"] and plugin.match(m["url"]):
+            have.setdefault(plugins.item_key(plugin, m["url"]), m["id"])
+    current = plugins.item_key(plugin, url)
+    groups = []
+    for g in listing["groups"]:
+        items = []
+        for it in g["items"]:
+            key = plugins.item_key(plugin, it["url"])
+            items.append({**it, "in_library": key in have, "media_id": have.get(key), "current": key == current})
+        groups.append({"key": g["key"], "title": g["title"], "note": g["note"], "checked": g["checked"],
+                       "language": g["options"].get("language") or plugin.options.get("language"), "items": items})
+    return {"plugin": plugin.name, "title": listing["title"], "groups": groups}
+
+
+# ---------- 外掛設定（只寫不讀：回傳的只有有沒有設定、什麼時候設定、瀏覽器型號） ----------
+
+@app.get("/api/plugins/settings")
+def plugin_settings():
+    return {"plugins": plugins.all_settings()}
+
+
+def _plugin_or_404(pid: str):
+    plugin = plugins.by_id(pid)
+    if not plugin or not plugin.settings:
+        raise HTTPException(404, "找不到這個外掛")
+    return plugin
+
+
+@app.put("/api/plugins/{pid}/settings")
+async def save_plugin_settings(pid: str, request: Request):
+    # 自己讀 body：格式錯誤時 FastAPI 的 422 會把送來的內容放回錯誤訊息，這裡不回傳也不記錄填的內容
+    try:
+        body = json.loads(await request.body() or b"{}")
+    except ValueError:
+        raise HTTPException(400, "格式不對")
+    if not isinstance(body, dict):
+        raise HTTPException(400, "格式不對")
+
+    def save():
+        plugin = _plugin_or_404(pid)
+        try:
+            return plugins.save_settings(plugin, body.get("values"), body.get("user_agent"))
+        except plugins.PluginError as e:
+            raise HTTPException(e.status, str(e))
+
+    return {"ok": True, "plugin": await run_in_threadpool(save)}
+
+
+class UserAgentReq(BaseModel):
+    user_agent: str = ""
+
+
+@app.put("/api/plugins/{pid}/user-agent")
+def plugin_user_agent(pid: str, req: UserAgentReq):
+    """網頁打開時自動送的瀏覽器 UA（外掛要的才送，只在跟存的不一樣時送）。規則見 plugins.update_user_agent。"""
+    plugin = _plugin_or_404(pid)
+    try:
+        return {"ok": True, **plugins.update_user_agent(plugin, req.user_agent)}
+    except plugins.PluginError as e:
+        raise HTTPException(e.status, str(e))
+
+
+@app.delete("/api/plugins/{pid}/settings")
+def clear_plugin_settings(pid: str):
+    plugin = _plugin_or_404(pid)
+    try:
+        return {"ok": True, "plugin": plugins.clear_settings(plugin)}
+    except plugins.PluginError as e:
+        raise HTTPException(e.status, str(e))
 
 
 @app.post("/api/media")
@@ -828,18 +930,62 @@ def add_media(req: AddMedia):
         # 本機外掛處理的網址：外掛固定的選項（例如語言、不翻譯）蓋掉網頁送來的
         plugin = plugins.find(url)
         if plugin:
-            if plugin.options.get("language", req.language) != req.language:
-                # 網頁選的辨識、翻譯模型是給原本的語言的，改用外掛指定語言的預設
-                req.engine = req.translator = None
-            for key, value in plugin.options.items():
-                setattr(req, key, value)
+            _apply_options(req, plugin.options)
         _require_media_tools()
         _resolve_options(req)
-        mid = db.add_media(title=url, source="url", url=url, playable=1)
-        d_job = db.add_job(mid, "download", {"url": url})
-        _enqueue_pipeline(mid, req, depends_on=d_job)
-        return {"id": mid}
+        return {"id": _add_url_media(url, req)}
     raise HTTPException(400, "未知的來源")
+
+
+def _apply_options(opt: TranscribeOptions, fixed: dict):
+    """外掛固定的選項蓋掉網頁送來的。換了語言時，網頁選的辨識、翻譯模型是給原本的語言的，改用新語言的預設。"""
+    if fixed.get("language", opt.language) != opt.language:
+        opt.engine = opt.translator = None
+    for key, value in fixed.items():
+        setattr(opt, key, value)
+
+
+def _add_url_media(url: str, opt: TranscribeOptions, title: str | None = None, series: dict | None = None) -> str:
+    """加一部網址影片：先下載，再照 opt 轉字幕（選項已經檢查過）。series：外掛標的作品、季、集（app/series.py）。"""
+    mid = db.add_media(title=title or url, source="url", url=url, playable=1, series_info=series_mod.dumps(series))
+    d_job = db.add_job(mid, "download", {"url": url})
+    _enqueue_pipeline(mid, opt, depends_on=d_job)
+    return mid
+
+
+class AddBatch(TranscribeOptions):
+    url: str                 # 貼的網址（外掛從它展開清單）
+    items: list[str]         # 勾選的每一集的網址，要在清單裡
+
+
+@app.post("/api/media/batch")
+def add_media_batch(req: AddBatch):
+    """外掛展開的清單裡勾選的集數一次加入。每一集的選項：網頁送來的 → 外掛固定的 → 那一組固定的（例如配音版的語言）。
+    全部檢查過才開始加，不會只加一半。"""
+    plugin, _url, listing = _plugin_listing(req.url)
+    wanted = set(req.items)
+    if not wanted:
+        raise HTTPException(400, "請至少勾一集")
+    if len(wanted) > plugins.MAX_ITEMS:
+        raise HTTPException(400, "一次勾太多了")
+    known = {it["url"]: (it, g) for g in listing["groups"] for it in g["items"]}
+    if any(u not in known for u in wanted):
+        raise HTTPException(400, "清單已經變了，請重新貼一次網址")
+    base = req.model_dump(include=set(TranscribeOptions.model_fields))
+    plan, checked = [], {}
+    for g in listing["groups"]:            # 照清單的順序排進佇列
+        opt = TranscribeOptions(**base)
+        _apply_options(opt, plugin.options)
+        _apply_options(opt, g["options"])
+        sig = json.dumps(opt.model_dump(), sort_keys=True)
+        for it in g["items"]:
+            if it["url"] in wanted:
+                if sig not in checked:
+                    checked[sig] = _resolve_options(opt)
+                plan.append((it, opt))
+    _require_media_tools()
+    ids = [_add_url_media(it["url"], opt, it["title"] or None, it.get("series")) for it, opt in plan]
+    return {"ok": True, "ids": ids, "count": len(ids)}
 
 
 @app.put("/api/upload")

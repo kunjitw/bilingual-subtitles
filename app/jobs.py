@@ -23,6 +23,7 @@ from pathlib import Path
 import soundfile as sf
 
 from . import cues as cue_mod
+from . import series as series_mod
 from . import config, db, gpu, media, plugins, safepath, settings, speech, syscheck, translate, vad
 from .config import (ASR_ENGINES, ALIGNER, LANGUAGES, LLAMA_SERVER, MEDIA_DIR, MODEL_CATALOG, PROXY_DIR,
                      ROOT, SAKURA_STYLE, SAMPLE_RATE, SEPARATOR, THUMB_DIR, TRANSLATORS, WORK_DIR, YTDLP_CACHE_DIR,
@@ -1681,7 +1682,7 @@ def handle_download(ctx: JobContext):
 def _plugin_download(ctx: JobContext, plugin, url: str, out_dir: Path) -> tuple[Path, str | None]:
     """用本機外掛下載。回傳（影片檔, 標題）；檔案是不是真的在 out_dir 裡由 handle_download 檢查。"""
     ctx.workdir.mkdir(parents=True, exist_ok=True)
-    job = plugins.PluginJob(ctx, url, out_dir, ctx.workdir)
+    job = plugins.PluginJob(ctx, url, out_dir, ctx.workdir, settings_dir=plugins.settings_dir(plugin))
     ctx.progress(0, f"下載中（{plugin.name}）")
     try:
         result = plugin.module.download(job)
@@ -1702,6 +1703,11 @@ def _plugin_download(ctx: JobContext, plugin, url: str, out_dir: Path) -> tuple[
     raw = result.get("path") if isinstance(result, dict) else None
     if not raw:
         raise RuntimeError(f"下載完成但找不到檔案（{plugin.name} 沒有回傳檔案位置）")
+    # 外掛標的作品、季、集（依作品分的播放列表）：從清單加入時已經標過的不蓋掉
+    info = series_mod.clean(result.get("series"))
+    current = db.get_media(ctx.media_id) or {}
+    if info and not series_mod.loads(current.get("series_info")):
+        db.update_media(ctx.media_id, series_info=series_mod.dumps(info))
     title = result.get("title")
     return Path(raw), title.strip() if isinstance(title, str) and title.strip() else None
 
