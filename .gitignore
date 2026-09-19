@@ -27,6 +27,9 @@
 # 不上傳的私人資料夾：實驗腳本、維護腳本、原型、研究資料、規劃文件
 /private/
 
+# 本機外掛（app/plugins.py）：只給自己用的網址下載程式
+/local_plugins/
+
 # 不公開的規劃文件
 /docs/internal/
 

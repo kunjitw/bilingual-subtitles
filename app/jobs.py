@@ -23,7 +23,7 @@ from pathlib import Path
 import soundfile as sf
 
 from . import cues as cue_mod
-from . import config, db, gpu, media, safepath, settings, speech, syscheck, translate, vad
+from . import config, db, gpu, media, plugins, safepath, settings, speech, syscheck, translate, vad
 from .config import (ASR_ENGINES, ALIGNER, LANGUAGES, LLAMA_SERVER, MEDIA_DIR, MODEL_CATALOG, PROXY_DIR,
                      ROOT, SAKURA_STYLE, SAMPLE_RATE, SEPARATOR, THUMB_DIR, TRANSLATORS, WORK_DIR, YTDLP_CACHE_DIR,
                      child_env, model_installed, translator_vram_mb)
@@ -1657,10 +1657,58 @@ def handle_download(ctx: JobContext):
     except ValueError as e:
         raise RuntimeError(f"下載失敗：{e}")
     safepath.require_safe_name(ctx.media_id, "影片 id")
-    import yt_dlp
-
     out_dir = MEDIA_DIR / ctx.media_id
     out_dir.mkdir(parents=True, exist_ok=True)
+    # 本機外掛（app/plugins.py，local_plugins 資料夾）要處理的網址交給外掛，其他的用 yt-dlp
+    plugin = plugins.find(url)
+    if plugin:
+        path, title = _plugin_download(ctx, plugin, url, out_dir)
+    else:
+        path, title = _ytdlp_download(ctx, url, out_dir)
+    if not safepath.inside(path, out_dir) or not path.is_file() or safepath.is_link(path):
+        raise RuntimeError(f"下載的檔案不在預期的資料夾裡：{path}")
+    ctx.progress(0.97, "讀取影片資訊")
+    info_probe = media.probe(path)
+    db.update_media(ctx.media_id, path=str(path), title=title or path.stem, **info_probe)
+    thumb = THUMB_DIR / f"{ctx.media_id}.jpg"
+    if media.make_thumbnail(path, thumb, info_probe["duration"]):
+        db.update_media(ctx.media_id, has_thumb=1)
+    if not db.get_media(ctx.media_id):
+        _drop_download(ctx, out_dir)
+        raise Cancelled()
+
+
+def _plugin_download(ctx: JobContext, plugin, url: str, out_dir: Path) -> tuple[Path, str | None]:
+    """用本機外掛下載。回傳（影片檔, 標題）；檔案是不是真的在 out_dir 裡由 handle_download 檢查。"""
+    ctx.workdir.mkdir(parents=True, exist_ok=True)
+    job = plugins.PluginJob(ctx, url, out_dir, ctx.workdir)
+    ctx.progress(0, f"下載中（{plugin.name}）")
+    try:
+        result = plugin.module.download(job)
+    except Cancelled:
+        _drop_download(ctx, out_dir)
+        raise
+    except Exception as e:  # noqa: BLE001
+        if ctx.cancel_event.is_set():
+            _drop_download(ctx, out_dir)
+            raise Cancelled()
+        log.warning("plugin %s download failed", plugin.name, exc_info=True)
+        raise RuntimeError(f"下載失敗（{plugin.name}）：{e}")
+    finally:
+        safepath.safe_rmtree(ctx.workdir, WORK_DIR)
+    if ctx.cancel_event.is_set() or not db.get_media(ctx.media_id):
+        _drop_download(ctx, out_dir)
+        raise Cancelled()
+    raw = result.get("path") if isinstance(result, dict) else None
+    if not raw:
+        raise RuntimeError(f"下載完成但找不到檔案（{plugin.name} 沒有回傳檔案位置）")
+    title = result.get("title")
+    return Path(raw), title.strip() if isinstance(title, str) and title.strip() else None
+
+
+def _ytdlp_download(ctx: JobContext, url: str, out_dir: Path) -> tuple[Path, str | None]:
+    import yt_dlp
+
     cookie_copy = ctx.workdir / "cookies.txt"
 
     def hook(d):
@@ -1731,17 +1779,7 @@ def handle_download(ctx: JobContext):
         path = files[0] if files else None
     if not path:
         raise RuntimeError("下載完成但找不到檔案")
-    if not safepath.inside(path, out_dir):
-        raise RuntimeError(f"下載的檔案不在預期的資料夾裡：{path}")
-    ctx.progress(0.97, "讀取影片資訊")
-    info_probe = media.probe(path)
-    db.update_media(ctx.media_id, path=str(path), title=info.get("title") or path.stem, **info_probe)
-    thumb = THUMB_DIR / f"{ctx.media_id}.jpg"
-    if media.make_thumbnail(path, thumb, info_probe["duration"]):
-        db.update_media(ctx.media_id, has_thumb=1)
-    if not db.get_media(ctx.media_id):
-        _drop_download(ctx, out_dir)
-        raise Cancelled()
+    return path, info.get("title")
 
 
 # ---------- 任務：下載模型 ----------

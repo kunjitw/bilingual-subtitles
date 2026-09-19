@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from . import config, db, gpu, health, instance, jobs, media, models, netinfo, safepath, syscheck
+from . import config, db, gpu, health, instance, jobs, media, models, netinfo, plugins, safepath, syscheck
 from . import cues as cue_mod
 from . import settings as settings_mod
 from . import vocab, vocab_api
@@ -781,6 +781,15 @@ def precheck_media(opt: TranscribeOptions):
     return {"ok": True}
 
 
+@app.get("/api/url-plugin")
+def url_plugin(url: str = ""):
+    """這個網址是不是由本機外掛處理（app/plugins.py）。網頁用來自動選好外掛固定的選項（例如語言、不翻譯）。"""
+    plugin = plugins.find(url)
+    if not plugin:
+        return {"plugin": None, "options": {}}
+    return {"plugin": plugin.name, "options": plugin.options}
+
+
 @app.post("/api/media")
 def add_media(req: AddMedia):
     if req.source == "local":
@@ -816,6 +825,14 @@ def add_media(req: AddMedia):
             url = safepath.check_download_url(req.url)
         except ValueError as e:
             raise HTTPException(400, str(e))
+        # 本機外掛處理的網址：外掛固定的選項（例如語言、不翻譯）蓋掉網頁送來的
+        plugin = plugins.find(url)
+        if plugin:
+            if plugin.options.get("language", req.language) != req.language:
+                # 網頁選的辨識、翻譯模型是給原本的語言的，改用外掛指定語言的預設
+                req.engine = req.translator = None
+            for key, value in plugin.options.items():
+                setattr(req, key, value)
         _require_media_tools()
         _resolve_options(req)
         mid = db.add_media(title=url, source="url", url=url, playable=1)

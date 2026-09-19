@@ -2376,6 +2376,8 @@ function openAddDialog(mode = 'add', force = false) {
   $('#drop-text').textContent = '把檔案拖到這裡，或點一下選擇';
   $('#upload-file').value = '';
   $('#url').value = '';
+  A.plugin = null;
+  $('#url-plugin').hidden = true;
   $('#do-translate').checked = S.settings.addTranslate !== false;
   $('#do-sensitive').checked = false;
   $('#adv-engine').dataset.lang = '';
@@ -2411,6 +2413,49 @@ $('#do-translate').addEventListener('change', () => {
   updateAddForm();
 });
 $('#url').addEventListener('input', updateAddForm);
+$('#url').addEventListener('input', checkUrlPlugin);
+
+// 本機外掛（app/plugins.py）處理的網址：自動選好外掛固定的語言、要不要翻譯。送出後後端也會照外掛的設定
+let urlPluginSeq = 0;
+let urlPluginTimer = null;
+function checkUrlPlugin() {
+  clearTimeout(urlPluginTimer);
+  const raw = $('#url').value.trim();
+  const seq = ++urlPluginSeq;
+  if (A.plugin) {
+    // 換了網址：外掛改過的翻譯勾選還原成平常的預設
+    if (typeof A.plugin.options?.translate === 'boolean') $('#do-translate').checked = S.settings.addTranslate !== false;
+    A.plugin = null;
+    $('#url-plugin').hidden = true;
+    updateAddForm();
+  }
+  if (A.mode !== 'add' || A.src !== 'url' || !/^https?:\/\/\S+/.test(raw)) return;
+  urlPluginTimer = setTimeout(async () => {
+    let res;
+    try { res = await api('GET', `/api/url-plugin?url=${encodeURIComponent(raw)}`); } catch { return; }
+    if (seq !== urlPluginSeq || !res?.plugin || !dlgAdd.open || $('#url').value.trim() !== raw) return;
+    applyUrlPlugin(res);
+  }, 250);
+}
+function applyUrlPlugin(res) {
+  A.plugin = res;
+  const o = res.options || {};
+  const parts = [];
+  if (o.language && S.meta.languages[o.language]) {
+    A.lang = o.language;
+    segSet($('#lang-seg'), A.lang);
+    $('#lang-seg').classList.remove('need');
+    parts.push(`語言${S.meta.languages[o.language]}`);
+  }
+  if (typeof o.translate === 'boolean') {
+    $('#do-translate').checked = o.translate;
+    parts.push(o.translate ? '翻譯' : '不翻譯');
+  }
+  $('#url-plugin').textContent = `這個網址由本機外掛「${res.plugin}」下載${parts.length ? `，固定${parts.join('、')}` : ''}。`;
+  $('#url-plugin').hidden = false;
+  $('#add-error').textContent = '';
+  updateAddForm();
+}
 
 // 同一部影片的網址有很多寫法（youtu.be、shorts、後面帶時間或播放清單），YouTube 用影片 ID 比對，其他網站比對網址本身
 function urlKey(raw) {
@@ -2528,6 +2573,13 @@ function uploadFile(file) {
 
 $('#form-add').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (!A.lang && A.mode === 'add' && A.src === 'url' && !A.plugin) {
+    // 貼上網址馬上按送出，外掛的檢查（checkUrlPlugin）還沒回來：先問一次，外掛有固定語言就不用選
+    try {
+      const res = await api('GET', `/api/url-plugin?url=${encodeURIComponent($('#url').value.trim())}`);
+      if (res?.plugin) applyUrlPlugin(res);
+    } catch { /* 照一般網址處理 */ }
+  }
   if (!A.lang) {
     $('#lang-seg').classList.add('need');
     $('#add-error').textContent = '請選擇影片語言';
